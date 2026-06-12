@@ -118,6 +118,9 @@ async def confirm_campaign(payload: CampaignConfirmRequest, background_tasks: Ba
             raise HTTPException(status_code=404, detail="Campaign not found")
             
         campaign = camp_res.data[0]
+        if campaign.get("status") != "draft":
+            raise HTTPException(status_code=409, detail="Campaign already confirmed")
+            
         segment = campaign.get("segment_filter", {})
         
         query = supabase.table("shoppers").select("*")
@@ -193,7 +196,7 @@ async def confirm_campaign(payload: CampaignConfirmRequest, background_tasks: Ba
             
         supabase.table("campaigns").update({
             "total_sent": len(inserted_comms),
-            "status": "sending"
+            "status": "confirmed"
         }).eq("id", campaign["id"]).execute()
         
         background_tasks.add_task(send_campaign_to_stub, campaign["id"], inserted_comms)
@@ -201,7 +204,7 @@ async def confirm_campaign(payload: CampaignConfirmRequest, background_tasks: Ba
         return {
             "campaign_id": campaign["id"],
             "total_sent": len(inserted_comms),
-            "status": "sending"
+            "status": "confirmed"
         }
     except HTTPException:
         raise
