@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+supabase
+python-dotenv
+httpx
+google-generativeai
+pydantic
+python-dateutil

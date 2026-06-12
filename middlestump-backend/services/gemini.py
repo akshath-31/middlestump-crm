@@ -1,0 +1,115 @@
+import os
+import json
+import logging
+import google.generativeai as genai
+from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+async def process_campaign_goal(goal: str, context: dict) -> dict:
+    prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
+You think like a senior marketing manager. When given a business goal, you analyze real business
+data and make specific, justified recommendations.
+
+Every recommendation you make must follow this exact structure:
+1. Opportunity: What specific opportunity exists in the data right now
+2. Why it matters: The business impact of acting on this opportunity
+3. Recommended action: Exactly who to target, what to say, which channel
+4. Predicted outcome: Specific numbers — open rate, clicks, conversions, revenue
+
+You may only target shoppers using these segment identifiers:
+- Tags: lapsed, high_value, churn_risk, ipl_buyer, first_timer, bulk_buyer, gifter
+- Shopper types: club_player, school_player, academy_coach, recreational, gifter
+- Filters: min_spend (INR), min_days_since_order, max_days_since_order
+
+Always respond in valid JSON only. No markdown. No explanation outside JSON.
+Do not predict more conversions than the total segment size.
+All monetary values are in INR.
+
+User message format:
+Business Goal: {goal}
+
+Current Business Context:
+{json.dumps(context, indent=2)}
+
+Respond with exactly this JSON structure:
+{{
+    "campaign_name": "string",
+    "target_segment_name": "string - human readable e.g. Lapsed High Value Players",
+    "opportunity": "string - what opportunity exists in the data",
+    "why_it_matters": "string - business impact",
+    "segment": {{
+        "filter_tags": [],
+        "shopper_types": [],
+        "min_spend": null,
+        "min_days_since_order": null,
+        "max_days_since_order": null
+    }},
+    "reasoning": "string - 2-3 sentences justifying this segment choice using the context data",
+    "message_template": "string - use {{name}}, {{last_product}}, {{days_since_order}} as variables. Conversational, cricket-specific, max 160 chars for SMS compatibility",
+    "channel": "whatsapp or sms or email",
+    "channel_reasoning": "string",
+    "predicted_open_rate": float,
+    "predicted_click_rate": float,
+    "predicted_conversions": int,
+    "predicted_revenue": float,
+    "follow_up_suggestion": "string"
+}}"""
+
+    model = genai.GenerativeModel(GEMINI_MODEL)
+    
+    try:
+        response = await model.generate_content_async(prompt, request_options={"timeout": 30})
+        return parse_json_response(response.text)
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning(f"First Gemini call failed JSON parse. Retrying: {e}")
+        retry_prompt = prompt + "\n\nYour previous response was not valid JSON. Respond with valid JSON only."
+        try:
+            response = await model.generate_content_async(retry_prompt, request_options={"timeout": 30})
+            return parse_json_response(response.text)
+        except Exception as e2:
+            logger.error(f"Second Gemini call failed: {e2}")
+            raise HTTPException(status_code=500, detail="AI failed to return valid JSON.")
+    except Exception as e:
+        logger.error(f"Gemini call failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def parse_json_response(text: str) -> dict:
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return json.loads(text.strip())
+
+async def generate_campaign_summary(campaign: dict, actual_stats: dict) -> str:
+    prompt = f"""You are the AI marketing strategist for MiddleStump.
+Original Goal: {campaign.get('goal')}
+Predicted Stats: 
+- Open Rate: {campaign.get('predicted_open_rate')}
+- Click Rate: {campaign.get('predicted_click_rate')}
+- Conversions: {campaign.get('predicted_conversions')}
+
+Actual Stats:
+{json.dumps(actual_stats, indent=2)}
+
+Write a plain English paragraph (3-4 sentences) that:
+1. States whether the campaign met, exceeded, or missed predictions
+2. Highlights the most interesting metric
+3. Suggests one specific follow-up action based on results.
+"""
+    model = genai.GenerativeModel(GEMINI_MODEL)
+    try:
+        response = await model.generate_content_async(prompt, request_options={"timeout": 30})
+        return response.text.strip()
+    except Exception as e:
+        logger.error(f"Gemini summary call failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate summary")
