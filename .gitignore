@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .venv/
 .gemini/
+middlestump-backend/test_models.py
+middlestump-backend/temp.py
+ARCHITECTURE.md
