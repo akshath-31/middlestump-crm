@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter
-from database import supabase
+from database import get_supabase_async
 from models import ReceiptCallbackRequest
 
 router = APIRouter(prefix="/api/communications", tags=["communications"])
@@ -15,7 +15,9 @@ async def receipt_callback(payload: ReceiptCallbackRequest):
         new_status = payload.status
         ts = payload.timestamp
         
-        comm_res = supabase.table("communications").select("*").eq("id", msg_id).execute()
+        db = await get_supabase_async()
+        
+        comm_res = await db.table("communications").select("*").eq("id", msg_id).execute()
         if not comm_res.data:
             logger.error(f"Communication {msg_id} not found")
             return {"status": "ok"}
@@ -46,11 +48,12 @@ async def receipt_callback(payload: ReceiptCallbackRequest):
         elif new_status == "converted":
             update_data["converted_at"] = ts
             
-        supabase.table("communications").update(update_data).eq("id", msg_id).execute()
+        await db.table("communications").update(update_data).eq("id", msg_id).execute()
         
         camp_id = comm["campaign_id"]
         
-        all_comms = supabase.table("communications").select("status").eq("campaign_id", camp_id).execute().data
+        all_comms_res = await db.table("communications").select("status").eq("campaign_id", camp_id).execute()
+        all_comms = all_comms_res.data
         
         delivered = 0
         opened = 0
@@ -60,19 +63,24 @@ async def receipt_callback(payload: ReceiptCallbackRequest):
         
         for c in all_comms:
             st = c.get("status")
-            if st == "delivered": delivered += 1
-            elif st == "opened": opened += 1
-            elif st == "clicked": clicked += 1
-            elif st == "converted": converted += 1
-            elif st == "failed": failed += 1
+            if st in ["delivered", "opened", "clicked", "converted"]:
+                delivered += 1
+            if st in ["opened", "clicked", "converted"]:
+                opened += 1
+            if st in ["clicked", "converted"]:
+                clicked += 1
+            if st == "converted":
+                converted += 1
+            if st == "failed":
+                failed += 1
         
-        total_delivered = delivered + opened + clicked + converted
-        total_opened = opened + clicked + converted
-        total_clicked = clicked + converted
+        total_delivered = delivered
+        total_opened = opened
+        total_clicked = clicked
         total_converted = converted
         total_failed = failed
 
-        supabase.table("campaigns").update({
+        await db.table("campaigns").update({
             "total_delivered": total_delivered,
             "total_opened": total_opened,
             "total_clicked": total_clicked,
