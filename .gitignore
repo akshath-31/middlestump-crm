@@ -1,10 +1,39 @@
-.env
+# Python
 __pycache__/
-*.pyc
-venv/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+.mypy_cache/
+
+# Virtual environments
 .venv/
+venv/
+env/
+ENV/
+
+# FastAPI / React
+node_modules/
+build/
+dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# IDE files
+.vscode/
+.idea/
 .gemini/
-middlestump-backend/test_models.py
-middlestump-backend/temp.py
-ARCHITECTURE.md
+
+# Temporary / Benchmarking Scripts
+test_models.py
+test_no_gemini.py
+measure_timings.py
+run_concurrency_test.ps1
 run_test.ps1

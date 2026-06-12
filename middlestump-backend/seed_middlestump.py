@@ -7,8 +7,12 @@ from supabase import create_client, Client
 
 fake = Faker('en_IN')
 
-URL = "https://gcuwtgdgpgsdaaucxfps.supabase.co"
-KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjdXd0Z2RncGdzZGFhdWN4ZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjg0NjIsImV4cCI6MjA5NjgwNDQ2Mn0.36x3-bbDQC0iLIMMEOn1Rofb7IWhD2jToeJ83UpYBqQ"
+from dotenv import load_dotenv
+
+load_dotenv()
+
+URL = os.getenv("SUPABASE_URL", "")
+KEY = os.getenv("SUPABASE_KEY", "")
 
 supabase: Client = create_client(URL, KEY)
 

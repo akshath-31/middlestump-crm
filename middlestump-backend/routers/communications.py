@@ -50,45 +50,49 @@ async def receipt_callback(payload: ReceiptCallbackRequest):
             
         await db.table("communications").update(update_data).eq("id", msg_id).execute()
         
+        # Incremental logic
         camp_id = comm["campaign_id"]
         
-        all_comms_res = await db.table("communications").select("status").eq("campaign_id", camp_id).execute()
-        all_comms = all_comms_res.data
+        deltas = {
+            "total_delivered": 0,
+            "total_opened": 0,
+            "total_clicked": 0,
+            "total_converted": 0,
+            "total_failed": 0
+        }
         
-        delivered = 0
-        opened = 0
-        clicked = 0
-        converted = 0
-        failed = 0
-        
-        for c in all_comms:
-            st = c.get("status")
-            if st in ["delivered", "opened", "clicked", "converted"]:
-                delivered += 1
-            if st in ["opened", "clicked", "converted"]:
-                opened += 1
-            if st in ["clicked", "converted"]:
-                clicked += 1
-            if st == "converted":
-                converted += 1
-            if st == "failed":
-                failed += 1
-        
-        total_delivered = delivered
-        total_opened = opened
-        total_clicked = clicked
-        total_converted = converted
-        total_failed = failed
+        def has_milestone(status, milestone):
+            if status in ["failed", "sent"]: return False
+            if milestone == "delivered": return status in ["delivered", "opened", "clicked", "converted"]
+            if milestone == "opened": return status in ["opened", "clicked", "converted"]
+            if milestone == "clicked": return status in ["clicked", "converted"]
+            if milestone == "converted": return status == "converted"
+            return False
 
-        await db.table("campaigns").update({
-            "total_delivered": total_delivered,
-            "total_opened": total_opened,
-            "total_clicked": total_clicked,
-            "total_converted": total_converted,
-            "total_failed": total_failed
-        }).eq("id", camp_id).execute()
+        if new_status == "failed":
+            deltas["total_failed"] += 1
+            if has_milestone(current_status, "delivered"): deltas["total_delivered"] -= 1
+            if has_milestone(current_status, "opened"): deltas["total_opened"] -= 1
+            if has_milestone(current_status, "clicked"): deltas["total_clicked"] -= 1
+            if has_milestone(current_status, "converted"): deltas["total_converted"] -= 1
+        else:
+            for milestone in ["delivered", "opened", "clicked", "converted"]:
+                if not has_milestone(current_status, milestone) and has_milestone(new_status, milestone):
+                    deltas[f"total_{milestone}"] += 1
+        
+        has_changes = any(v != 0 for v in deltas.values())
+        if has_changes:
+            await db.rpc("increment_campaign_counters", {
+                "camp_id": camp_id,
+                "delivered_delta": deltas["total_delivered"],
+                "opened_delta": deltas["total_opened"],
+                "clicked_delta": deltas["total_clicked"],
+                "converted_delta": deltas["total_converted"],
+                "failed_delta": deltas["total_failed"]
+            }).execute()
         
     except Exception as e:
         logger.error(f"Receipt callback error: {e}")
         
     return {"status": "ok"}
+

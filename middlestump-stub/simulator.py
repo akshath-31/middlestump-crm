@@ -45,7 +45,7 @@ async def fire_callback(url: str, message_id: str, status: str):
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             await client.post(url, json=payload)
         
         if status == "delivered": metrics["total_delivered"] += 1
