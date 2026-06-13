@@ -193,6 +193,7 @@ Write a plain English paragraph (3-4 sentences) that:
         raise HTTPException(status_code=500, detail="Failed to generate summary")
 
 async def generate_opportunities(context: dict) -> list:
+    logger.info("=== OPPORTUNITIES FUNCTION ENTERED ===")
     prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
 Analyze the business context provided and identify exactly 6 campaign opportunities.
 Each opportunity must be specific, actionable, and justified by the data.
@@ -258,6 +259,6 @@ Be concise. Keep all string values short. Do not write long sentences. Return on
             logger.error(traceback.format_exc())
             return FALLBACK_OPPORTUNITIES
     except Exception as e:
-        logger.error(f"=== OPPORTUNITIES: Failed with error: {e} ===")
+        logger.error(f"=== OPPORTUNITIES CRASHED INSTANTLY: {type(e).__name__}: {e} ===")
         logger.error(traceback.format_exc())
         return FALLBACK_OPPORTUNITIES
