@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import asyncio
 import google.generativeai as genai
 from fastapi import HTTPException
 
@@ -9,8 +10,34 @@ logger = logging.getLogger(__name__)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+async def call_gemini_with_fallback(prompt, generation_config=None, request_options=None):
+    keys = [
+        os.getenv("GEMINI_API_KEY"),
+        os.getenv("GEMINI_API_KEY_BACKUP")
+    ]
+    keys = [k for k in keys if k]  # filter out None
+    
+    last_error = None
+    for key in keys:
+        try:
+            genai.configure(api_key=key)
+            model = genai.GenerativeModel(GEMINI_MODEL)
+            # We use asyncio.to_thread with the synchronous generate_content
+            response = await asyncio.to_thread(
+                model.generate_content,
+                prompt,
+                generation_config=generation_config,
+                request_options=request_options
+            )
+            return response
+        except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower():
+                logger.warning(f"Key ending in ...{key[-4:]} hit quota limit, trying next key")
+                last_error = e
+                continue
+            raise e  # non-quota errors raise immediately
+    
+    raise last_error  # all keys exhausted
 
 async def process_campaign_goal(goal: str, context: dict) -> dict:
     prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
@@ -76,16 +103,14 @@ Respond with exactly this JSON structure:
     "follow_up_suggestion": "string"
 }}"""
 
-    model = genai.GenerativeModel(GEMINI_MODEL)
-    
     try:
-        response = await model.generate_content_async(prompt, request_options={"timeout": 30})
+        response = await call_gemini_with_fallback(prompt, request_options={"timeout": 30})
         return parse_json_response(response.text)
     except (json.JSONDecodeError, ValueError) as e:
         logger.warning(f"First Gemini call failed JSON parse. Retrying: {e}")
         retry_prompt = prompt + "\n\nYour previous response was not valid JSON. Respond with valid JSON only."
         try:
-            response = await model.generate_content_async(retry_prompt, request_options={"timeout": 30})
+            response = await call_gemini_with_fallback(retry_prompt, request_options={"timeout": 30})
             return parse_json_response(response.text)
         except Exception as e2:
             logger.error(f"Second Gemini call failed: {e2}")
@@ -120,9 +145,8 @@ Write a plain English paragraph (3-4 sentences) that:
 2. Highlights the most interesting metric
 3. Suggests one specific follow-up action based on results.
 """
-    model = genai.GenerativeModel(GEMINI_MODEL)
     try:
-        response = await model.generate_content_async(prompt, request_options={"timeout": 30})
+        response = await call_gemini_with_fallback(prompt, request_options={"timeout": 30})
         return response.text.strip()
     except Exception as e:
         logger.error(f"Gemini summary call failed: {e}")
