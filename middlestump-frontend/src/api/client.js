@@ -39,6 +39,7 @@ api.interceptors.response.use(
 );
 
 export const getContext = () => api.get('/api/ai/context').then(res => res.data);
+export const getOpportunities = () => api.get('/api/ai/opportunities').then(res => res.data);
 export const analyzeCampaign = (goal) => api.post('/api/ai/analyze', { goal }).then(res => res.data);
 export const confirmCampaign = (campaign_id) => api.post('/api/ai/confirm', { campaign_id }).then(res => res.data);
 export const getCampaignStats = (id) => api.get(`/api/campaigns/${id}`).then(res => res.data);
