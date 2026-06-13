@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import traceback
 import google.generativeai as genai
 from fastapi import HTTPException
 
@@ -204,12 +205,12 @@ Identify exactly 6 campaign opportunities right now for this cricket brand.
 Respond with exactly this JSON structure — an array of exactly 6 objects:
 [
   {{
-    "title": "string - short punchy opportunity name e.g. Win Back Lapsed Club Players",
-    "segment_name": "string - human readable segment e.g. Lapsed Club Players",
+    "title": "short punchy name max 5 words",
+    "segment_name": "short segment label",
     "priority": "high or medium or low",
     "estimated_reach": int,
-    "why_it_matters": "string - one sentence on business impact",
-    "suggested_goal": "string - the exact goal text to pre-fill in the campaign chat e.g. Re-engage lapsed club players who havent ordered in 6 months with a pre-season discount",
+    "why_it_matters": "max 12 words only",
+    "suggested_goal": "one sentence campaign goal",
     "suggested_channel": "whatsapp or sms or email",
     "estimated_revenue": float
   }}
@@ -220,30 +221,43 @@ Rules:
 - Each opportunity must target a different segment
 - Priority must reflect actual business urgency based on the context data
 - estimated_reach must be realistic based on segment_health counts in the context
-- suggested_goal must be a complete natural language sentence ready to paste into a campaign chat
 - All monetary values in INR
+
+Be concise. Keep all string values short. Do not write long sentences. Return only the raw JSON array starting with [ and ending with ]. No markdown. No backticks.
 """
     model = genai.GenerativeModel(GEMINI_MODEL)
     try:
-        response = await model.generate_content_async(prompt, request_options={"timeout": 30})
-        data = parse_json_response(response.text)
+        logger.info("=== OPPORTUNITIES: Calling Gemini ===")
+        response = await model.generate_content_async(prompt, request_options={"timeout": 60})
+        raw = response.text
+        logger.info(f"=== OPPORTUNITIES: Raw Gemini response: {raw[:500]} ===")
+        
+        data = parse_json_response(raw)
         if isinstance(data, list) and len(data) == 6:
+            logger.info(f"=== OPPORTUNITIES: Successfully parsed {len(data)} opportunities ===")
             return data
         else:
-            raise ValueError("Response was not an array of 6 opportunities")
+            raise ValueError(f"Response was not an array of 6 opportunities. Got: {type(data)} with length {len(data) if isinstance(data, list) else 'N/A'}")
     except (json.JSONDecodeError, ValueError) as e:
         logger.warning(f"First Gemini opportunities call failed. Retrying: {e}")
         retry_prompt = prompt + "\n\nYour previous response was not valid JSON or didn't contain exactly 6 items. Respond with valid JSON array of exactly 6 objects only."
         try:
-            response = await model.generate_content_async(retry_prompt, request_options={"timeout": 30})
-            data = parse_json_response(response.text)
+            logger.info("=== OPPORTUNITIES: Calling Gemini (Retry) ===")
+            response = await model.generate_content_async(retry_prompt, request_options={"timeout": 60})
+            raw = response.text
+            logger.info(f"=== OPPORTUNITIES: Raw Gemini retry response: {raw[:500]} ===")
+            
+            data = parse_json_response(raw)
             if isinstance(data, list) and len(data) == 6:
+                logger.info(f"=== OPPORTUNITIES: Successfully parsed {len(data)} opportunities on retry ===")
                 return data
             else:
                 raise ValueError("Response was not an array of 6 opportunities")
         except Exception as e2:
-            logger.error(f"Second Gemini opportunities call failed: {e2}. Using fallback.")
+            logger.error(f"=== OPPORTUNITIES: Failed with error on retry: {e2} ===")
+            logger.error(traceback.format_exc())
             return FALLBACK_OPPORTUNITIES
     except Exception as e:
-        logger.error(f"Gemini opportunities call failed: {e}. Using fallback.")
+        logger.error(f"=== OPPORTUNITIES: Failed with error: {e} ===")
+        logger.error(traceback.format_exc())
         return FALLBACK_OPPORTUNITIES
