@@ -20,6 +20,15 @@ export function Overview() {
   }
 
   const recentCampaigns = campaigns?.slice(0, 3) || [];
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentConversions = campaigns?.filter(c => new Date(c.created_at) >= thirtyDaysAgo)
+    .reduce((sum, c) => sum + (c.total_converted || 0), 0) || 0;
+
+  const totalConvertedAll = campaigns?.reduce((sum, c) => sum + (c.total_converted || 0), 0) || 0;
+  const totalSentAll = campaigns?.reduce((sum, c) => sum + (c.total_sent || 0), 0) || 0;
+  const overallConversionRate = totalSentAll > 0 ? ((totalConvertedAll / totalSentAll) * 100).toFixed(1) : "0.0";
   
   // Format segments data
   const segmentHealth = [
@@ -40,9 +49,9 @@ export function Overview() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Shoppers" value={context?.total_shoppers?.toLocaleString() || '0'} color="green" />
-        <StatCard title="Total Campaigns" value={context?.total_campaigns?.toLocaleString() || '0'} color="blue" />
-        <StatCard title="Revenue Last 30 Days" value={`₹${(context?.recent_revenue || 0).toLocaleString('en-IN')}`} color="green" />
-        <StatCard title="Revenue Trend" value="+12.5%" subtitle="vs previous 30 days" trend="up" color="green" />
+        <StatCard title="Total Campaigns" value={campaigns?.length?.toLocaleString() || '0'} color="blue" />
+        <StatCard title="Conversions Last 30 Days" value={recentConversions.toLocaleString()} color="green" />
+        <StatCard title="Overall Conversion Rate" value={`${overallConversionRate}%`} color="green" />
       </div>
 
       <div>
@@ -83,14 +92,14 @@ export function Overview() {
             </thead>
             <tbody>
               {recentCampaigns.map(c => {
-                const openRate = c.delivered_count ? ((c.opened_count/c.delivered_count)*100).toFixed(1) : 0;
-                const clickRate = c.opened_count ? ((c.clicked_count/c.opened_count)*100).toFixed(1) : 0;
+                const openRate = c.total_delivered ? ((c.total_opened / c.total_delivered) * 100).toFixed(1) : "0.0";
+                const clickRate = c.total_opened ? ((c.total_clicked / c.total_opened) * 100).toFixed(1) : "0.0";
                 return (
                   <tr key={c.id} onClick={() => navigate('/campaigns')} className="border-b border-border hover:bg-surface2 cursor-pointer transition-colors">
                     <td className="px-6 py-4 font-medium text-text-primary">{c.name}</td>
-                    <td className="px-6 py-4"><SegmentBadge segment={c.target_segment} /></td>
+                    <td className="px-6 py-4"><SegmentBadge segment={c.target_segment_name} /></td>
                     <td className="px-6 py-4 uppercase text-xs font-semibold">{c.channel}</td>
-                    <td className="px-6 py-4 font-medium">{c.sent_count}</td>
+                    <td className="px-6 py-4 font-medium">{c.total_sent || c.sent_count || 0}</td>
                     <td className="px-6 py-4 text-text-secondary">
                       <span className="text-amber font-medium">{openRate}%</span> open · <span className="text-primary font-medium">{clickRate}%</span> click
                     </td>
