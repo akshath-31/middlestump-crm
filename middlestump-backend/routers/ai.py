@@ -18,23 +18,7 @@ async def get_context():
 async def analyze_goal(payload: CampaignGoalRequest):
     try:
         context = await get_business_context()
-        # Bypassing Gemini to avoid rate limits
-        ai_res = {
-            "campaign_name": "Dummy Campaign",
-            "target_segment_name": "All Shoppers",
-            "opportunity": "Dummy",
-            "why_it_matters": "Dummy",
-            "segment": {},
-            "reasoning": "Dummy",
-            "message_template": "Hi {name}, you bought {last_product} {days_since_order} days ago.",
-            "channel": "whatsapp",
-            "channel_reasoning": "Dummy",
-            "predicted_open_rate": 0.5,
-            "predicted_click_rate": 0.1,
-            "predicted_conversions": 100,
-            "predicted_revenue": 1000.0,
-            "follow_up_suggestion": "Dummy"
-        }
+        ai_res = await process_campaign_goal(payload.goal, context)
         segment = ai_res.get("segment", {})
         query = supabase.table("shoppers").select("*")
         
