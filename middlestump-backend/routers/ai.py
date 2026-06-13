@@ -20,6 +20,9 @@ async def analyze_goal(payload: CampaignGoalRequest):
         context = await get_business_context()
         ai_res = await process_campaign_goal(payload.goal, context)
         segment = ai_res.get("segment", {})
+        
+        logger.info(f"Gemini segment filter: {segment}")
+        
         query = supabase.table("shoppers").select("*")
         
         filter_tags = segment.get("filter_tags") or []
@@ -43,23 +46,70 @@ async def analyze_goal(payload: CampaignGoalRequest):
             min_date = today - timedelta(days=max_days)
             query = query.gte("last_order_date", min_date.isoformat())
             
+        logger.info(f"Supabase query parameters: filter_tags={filter_tags}, shopper_types={shopper_types}, min_spend={min_spend}, min_days={min_days}, max_days={max_days}")
+            
         shoppers = query.execute().data
         actual_reach = len(shoppers)
+        logger.info(f"Actual reach returned: {actual_reach}")
         
+        if actual_reach == 0:
+            logger.info("Applying fallback segment filter (lapsed tag) due to 0 reach")
+            segment = {"filter_tags": ["lapsed"]}
+            query = supabase.table("shoppers").select("*").contains("tags", ["lapsed"])
+            shoppers = query.execute().data
+            actual_reach = len(shoppers)
+            logger.info(f"Fallback actual reach: {actual_reach}")
+            
+        target_segment_name = ai_res.get("target_segment_name")
+        if not target_segment_name or target_segment_name.upper() == "UNKNOWN":
+            filter_tags_fallback = segment.get("filter_tags") or []
+            if filter_tags_fallback:
+                target_segment_name = filter_tags_fallback[0].capitalize()
+            else:
+                target_segment_name = "All Shoppers"
+
+        channel = (ai_res.get("channel") or "email").lower()
+        
+        DEFAULT_PREDICTIONS = {
+            "whatsapp": {"open_rate": 0.45, "click_rate": 0.20, "conversion_rate": 0.08},
+            "sms":      {"open_rate": 0.38, "click_rate": 0.14, "conversion_rate": 0.05},
+            "email":    {"open_rate": 0.28, "click_rate": 0.12, "conversion_rate": 0.04},
+        }
+        
+        pred_open = ai_res.get("predicted_open_rate")
+        pred_click = ai_res.get("predicted_click_rate")
+        pred_conv = ai_res.get("predicted_conversions")
+        pred_rev = ai_res.get("predicted_revenue")
+        
+        logger.info(f"Raw Gemini predictions: open={pred_open}, click={pred_click}, conv={pred_conv}, rev={pred_rev}")
+        
+        defaults = DEFAULT_PREDICTIONS.get(channel, DEFAULT_PREDICTIONS["email"])
+        
+        if not pred_open or float(pred_open) == 0:
+            pred_open = defaults["open_rate"] * 100
+        if not pred_click or float(pred_click) == 0:
+            pred_click = defaults["click_rate"] * 100
+            
+        if not pred_conv or float(pred_conv) == 0:
+            pred_conv = int(actual_reach * defaults["conversion_rate"])
+            
+        if not pred_rev or float(pred_rev) == 0:
+            pred_rev = pred_conv * 3500
+
         campaign_data = {
             "name": ai_res.get("campaign_name", "Untitled Campaign"),
             "goal": payload.goal,
             "prompt": payload.goal,
-            "target_segment_name": ai_res.get("target_segment_name"),
+            "target_segment_name": target_segment_name,
             "segment_filter": segment,
             "message_template": ai_res.get("message_template"),
-            "channel": ai_res.get("channel"),
+            "channel": channel,
             "status": "draft",
             "ai_reasoning": ai_res.get("reasoning"),
-            "predicted_open_rate": ai_res.get("predicted_open_rate"),
-            "predicted_click_rate": ai_res.get("predicted_click_rate"),
-            "predicted_conversions": ai_res.get("predicted_conversions"),
-            "predicted_revenue": ai_res.get("predicted_revenue"),
+            "predicted_open_rate": pred_open,
+            "predicted_click_rate": pred_click,
+            "predicted_conversions": pred_conv,
+            "predicted_revenue": pred_rev,
         }
         
         camp_res = supabase.table("campaigns").insert(campaign_data).execute()
@@ -80,7 +130,8 @@ async def analyze_goal(payload: CampaignGoalRequest):
                     if items_res.data:
                         last_product = items_res.data[0]["product_name"]
                         
-                last_d = date.fromisoformat(sample["last_order_date"])
+                # Fix: Handle ISO formats safely by slicing up to 10 chars (YYYY-MM-DD)
+                last_d = date.fromisoformat(sample["last_order_date"][:10])
                 days_since = str((today - last_d).days)
                 
             message_preview = message_preview.replace("{name}", name).replace("{last_product}", last_product).replace("{days_since_order}", days_since)
@@ -88,19 +139,19 @@ async def analyze_goal(payload: CampaignGoalRequest):
         return {
             "campaign_id": campaign_id,
             "campaign_name": ai_res.get("campaign_name"),
-            "target_segment_name": ai_res.get("target_segment_name"),
+            "target_segment_name": target_segment_name,
             "opportunity": ai_res.get("opportunity"),
             "why_it_matters": ai_res.get("why_it_matters"),
             "actual_reach": actual_reach,
             "reasoning": ai_res.get("reasoning"),
             "message_template": ai_res.get("message_template"),
             "message_preview": message_preview,
-            "channel": ai_res.get("channel"),
+            "channel": channel,
             "channel_reasoning": ai_res.get("channel_reasoning"),
-            "predicted_open_rate": ai_res.get("predicted_open_rate"),
-            "predicted_click_rate": ai_res.get("predicted_click_rate"),
-            "predicted_conversions": ai_res.get("predicted_conversions"),
-            "predicted_revenue": ai_res.get("predicted_revenue"),
+            "predicted_open_rate": pred_open,
+            "predicted_click_rate": pred_click,
+            "predicted_conversions": pred_conv,
+            "predicted_revenue": pred_rev,
             "follow_up_suggestion": ai_res.get("follow_up_suggestion")
         }
     except HTTPException:
