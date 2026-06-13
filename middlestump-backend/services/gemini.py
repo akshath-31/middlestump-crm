@@ -29,8 +29,22 @@ You may only target shoppers using these segment identifiers:
 - Filters: min_spend (INR), min_days_since_order, max_days_since_order
 
 Always respond in valid JSON only. No markdown. No explanation outside JSON.
-Do not predict more conversions than the total segment size.
-All monetary values are in INR.
+PREDICTION RULES — YOU MUST FOLLOW THESE EXACTLY. NO EXCEPTIONS.
+
+You are predicting campaign performance for an Indian D2C cricket brand.
+These are hard ceilings. Never exceed them under any circumstance:
+
+WhatsApp: open rate 40-55%, click rate 15-25%
+SMS: open rate 30-45%, click rate 10-18%
+Email: open rate 20-35%, click rate 8-15%
+
+predicted_open_rate must be a decimal between 0 and 1. Example: 0.42 not 42.
+predicted_click_rate must be a decimal between 0 and 1. Example: 0.18 not 18.
+predicted_conversions must be between 1 and 10% of the segment size. Never more.
+predicted_revenue = predicted_conversions multiplied by average order value of 3500 INR.
+
+If you return any open rate above 0.55 or any click rate above 0.25 your response is wrong.
+Double check your prediction numbers before responding.
 
 User message format:
 Business Goal: {goal}
