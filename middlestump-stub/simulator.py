@@ -18,9 +18,9 @@ if DEMO_MODE:
 MIN_DELIVERY_DELAY = float(os.getenv("MIN_DELIVERY_DELAY", "2"))
 MAX_DELIVERY_DELAY = float(os.getenv("MAX_DELIVERY_DELAY", "6"))
 FAILURE_RATE = float(os.getenv("FAILURE_RATE", "0.05"))
-OPEN_RATE = float(os.getenv("OPEN_RATE", "0.50"))
-CLICK_RATE = float(os.getenv("CLICK_RATE", "0.25"))
-CONVERSION_RATE = float(os.getenv("CONVERSION_RATE", "0.10"))
+OPEN_RATE = float(os.getenv("OPEN_RATE", "0.65"))
+CLICK_RATE = float(os.getenv("CLICK_RATE", "0.40"))
+CONVERSION_RATE = float(os.getenv("CONVERSION_RATE", "0.20"))
 
 CHANNEL_MODIFIERS = {
     "whatsapp": {"open_rate": 1.0,  "click_rate": 1.0},
