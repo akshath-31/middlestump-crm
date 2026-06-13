@@ -7,9 +7,9 @@ import { LiveStatsPanel } from '../components/campaign/LiveStatsPanel';
 
 export function Campaign() {
   const location = useLocation();
-  const prefillGoal = location.state?.prefillGoal || location.state?.presetGoal || '';
+  const presetGoal = location.state?.presetGoal || '';
   
-  const [goal, setGoal] = useState(prefillGoal);
+  const [goal, setGoal] = useState(presetGoal);
   const [messages, setMessages] = useState([]);
   const [state, setState] = useState('idle'); // idle, analyzing, recommendation_shown, confirming, firing, live_tracking, completed
   const [recommendation, setRecommendation] = useState(null);
@@ -26,10 +26,10 @@ export function Campaign() {
 
   // Auto-submit if preset goal is provided
   useEffect(() => {
-    if (prefillGoal && state === 'idle') {
-      handleAnalyze(prefillGoal);
+    if (presetGoal && state === 'idle') {
+      handleAnalyze(presetGoal);
     }
-  }, [prefillGoal, state]);
+  }, [presetGoal, state]);
 
   // Handle completion
   useEffect(() => {
