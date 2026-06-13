@@ -1,7 +1,6 @@
 import os
 import json
 import logging
-import traceback
 import google.generativeai as genai
 from fastapi import HTTPException
 
@@ -12,69 +11,6 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-
-FALLBACK_OPPORTUNITIES = [
-    {
-        "title": "Win Back Lapsed Players",
-        "segment_name": "Lapsed Shoppers",
-        "priority": "high",
-        "estimated_reach": 89,
-        "why_it_matters": "89 shoppers haven't ordered in 6+ months representing significant lost revenue",
-        "suggested_goal": "Re-engage lapsed shoppers who haven't ordered in over 6 months with a comeback discount",
-        "suggested_channel": "whatsapp",
-        "estimated_revenue": 18000.0
-    },
-    {
-        "title": "VIP High Value Campaign",
-        "segment_name": "High Value Shoppers",
-        "priority": "high",
-        "estimated_reach": 43,
-        "why_it_matters": "Top spenders with LTV over 15000 INR deserve exclusive early access",
-        "suggested_goal": "Reward high value shoppers with exclusive early access to new season gear",
-        "suggested_channel": "whatsapp",
-        "estimated_revenue": 25000.0
-    },
-    {
-        "title": "Save Churning Shoppers",
-        "segment_name": "Churn Risk",
-        "priority": "high",
-        "estimated_reach": 34,
-        "why_it_matters": "34 previously active shoppers showing disengagement signals",
-        "suggested_goal": "Re-engage churn risk shoppers who were buying regularly but have gone silent",
-        "suggested_channel": "sms",
-        "estimated_revenue": 12000.0
-    },
-    {
-        "title": "IPL Season Activation",
-        "segment_name": "IPL Buyers",
-        "priority": "medium",
-        "estimated_reach": 112,
-        "why_it_matters": "112 shoppers who bought during IPL season are primed for repeat purchase",
-        "suggested_goal": "Target IPL season buyers with new season gear recommendations",
-        "suggested_channel": "whatsapp",
-        "estimated_revenue": 32000.0
-    },
-    {
-        "title": "Convert First Timers",
-        "segment_name": "First Timers",
-        "priority": "medium",
-        "estimated_reach": 51,
-        "why_it_matters": "51 shoppers made exactly one purchase and need nurturing into loyal buyers",
-        "suggested_goal": "Nudge first time buyers to make their second purchase with a loyalty discount",
-        "suggested_channel": "email",
-        "estimated_revenue": 9000.0
-    },
-    {
-        "title": "Academy Restock Campaign",
-        "segment_name": "Academy Coaches",
-        "priority": "medium",
-        "estimated_reach": 38,
-        "why_it_matters": "Academy coaches are bulk buyers with high order values due for seasonal restock",
-        "suggested_goal": "Reach academy coaches with bulk restock offers ahead of tournament season",
-        "suggested_channel": "email",
-        "estimated_revenue": 45000.0
-    }
-]
 
 async def process_campaign_goal(goal: str, context: dict) -> dict:
     prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
@@ -191,74 +127,3 @@ Write a plain English paragraph (3-4 sentences) that:
     except Exception as e:
         logger.error(f"Gemini summary call failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate summary")
-
-async def generate_opportunities(context: dict) -> list:
-    logger.info("=== OPPORTUNITIES FUNCTION ENTERED ===")
-    prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
-Analyze the business context provided and identify exactly 6 campaign opportunities.
-Each opportunity must be specific, actionable, and justified by the data.
-Always respond in valid JSON only. No markdown. No explanation outside JSON.
-
-Current Business Context:
-{json.dumps(context, indent=2)}
-
-Identify exactly 6 campaign opportunities right now for this cricket brand.
-Respond with exactly this JSON structure — an array of exactly 6 objects:
-[
-  {{
-    "title": "short punchy name max 5 words",
-    "segment_name": "short segment label",
-    "priority": "high or medium or low",
-    "estimated_reach": int,
-    "why_it_matters": "max 12 words only",
-    "suggested_goal": "one sentence campaign goal",
-    "suggested_channel": "whatsapp or sms or email",
-    "estimated_revenue": float
-  }}
-]
-
-Rules:
-- Return exactly 6 opportunities, no more no less
-- Each opportunity must target a different segment
-- Priority must reflect actual business urgency based on the context data
-- estimated_reach must be realistic based on segment_health counts in the context
-- All monetary values in INR
-
-Be concise. Keep all string values short. Do not write long sentences. Return only the raw JSON array starting with [ and ending with ]. No markdown. No backticks.
-"""
-    model = genai.GenerativeModel(GEMINI_MODEL)
-    try:
-        logger.info("=== OPPORTUNITIES: Calling Gemini ===")
-        response = await model.generate_content_async(prompt, request_options={"timeout": 60})
-        raw = response.text
-        logger.info(f"=== OPPORTUNITIES: Raw Gemini response: {raw[:500]} ===")
-        
-        data = parse_json_response(raw)
-        if isinstance(data, list) and len(data) == 6:
-            logger.info(f"=== OPPORTUNITIES: Successfully parsed {len(data)} opportunities ===")
-            return data
-        else:
-            raise ValueError(f"Response was not an array of 6 opportunities. Got: {type(data)} with length {len(data) if isinstance(data, list) else 'N/A'}")
-    except (json.JSONDecodeError, ValueError) as e:
-        logger.warning(f"First Gemini opportunities call failed. Retrying: {e}")
-        retry_prompt = prompt + "\n\nYour previous response was not valid JSON or didn't contain exactly 6 items. Respond with valid JSON array of exactly 6 objects only."
-        try:
-            logger.info("=== OPPORTUNITIES: Calling Gemini (Retry) ===")
-            response = await model.generate_content_async(retry_prompt, request_options={"timeout": 60})
-            raw = response.text
-            logger.info(f"=== OPPORTUNITIES: Raw Gemini retry response: {raw[:500]} ===")
-            
-            data = parse_json_response(raw)
-            if isinstance(data, list) and len(data) == 6:
-                logger.info(f"=== OPPORTUNITIES: Successfully parsed {len(data)} opportunities on retry ===")
-                return data
-            else:
-                raise ValueError("Response was not an array of 6 opportunities")
-        except Exception as e2:
-            logger.error(f"=== OPPORTUNITIES: Failed with error on retry: {e2} ===")
-            logger.error(traceback.format_exc())
-            return FALLBACK_OPPORTUNITIES
-    except Exception as e:
-        logger.error(f"=== OPPORTUNITIES CRASHED INSTANTLY: {type(e).__name__}: {e} ===")
-        logger.error(traceback.format_exc())
-        return FALLBACK_OPPORTUNITIES
