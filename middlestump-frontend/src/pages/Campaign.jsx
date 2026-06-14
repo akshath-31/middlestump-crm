@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { analyzeCampaign, confirmCampaign, getCampaignSummary } from '../api/client';
+import { analyzeCampaign, confirmCampaign } from '../api/client';
 import { useCampaignStats } from '../hooks/useCampaignStats';
 import { RecommendationCard } from '../components/campaign/RecommendationCard';
 import { LiveStatsPanel } from '../components/campaign/LiveStatsPanel';
@@ -13,7 +13,6 @@ export function Campaign() {
   const [state, setState] = useState('idle'); // idle, analyzing, recommendation_shown, confirming, firing, live_tracking, completed
   const [recommendation, setRecommendation] = useState(null);
   const [campaignId, setCampaignId] = useState(null);
-  const [summary, setSummary] = useState(null);
   
   const messagesEndRef = useRef(null);
   const hasAutoSubmitted = useRef(false);
@@ -37,23 +36,8 @@ export function Campaign() {
   useEffect(() => {
     if (state === 'live_tracking' && isComplete) {
       setState('completed');
-      setMessages(prev => [...prev, { role: 'system', content: 'Generating final summary...' }]);
-      
-      getCampaignSummary(campaignId).then(res => {
-        setSummary(res.summary);
-        setMessages(prev => prev.filter(m => m.content !== 'Generating final summary...').concat({
-          role: 'ai',
-          type: 'summary',
-          content: res.summary
-        }));
-      }).catch(err => {
-        setMessages(prev => prev.filter(m => m.content !== 'Generating final summary...').concat({
-          role: 'ai',
-          content: 'Failed to generate summary.'
-        }));
-      });
     }
-  }, [isComplete, state, campaignId]);
+  }, [isComplete, state]);
 
   const handleAnalyze = async (text) => {
     if (!text.trim()) return;
@@ -169,12 +153,7 @@ export function Campaign() {
                 {m.role === 'ai' && m.type === 'live_tracking' && (
                   <LiveStatsPanel stats={stats} recommendation={recommendation} />
                 )}
-                {m.role === 'ai' && m.type === 'summary' && (
-                  <div className="bg-surface border border-border py-4 px-6 rounded-lg max-w-3xl whitespace-pre-wrap text-sm text-text-primary shadow-sm border-l-4 border-l-primary">
-                    <h4 className="font-bold mb-2 flex items-center"><span className="mr-2">✨</span>Campaign Summary</h4>
-                    {m.content}
-                  </div>
-                )}
+
                 {m.role === 'ai' && !m.type && m.content && (
                   <div className="bg-surface2 text-text-primary py-3 px-5 rounded-[20px] rounded-tl-[4px] max-w-[70%]">
                     <div>{m.content}</div>
