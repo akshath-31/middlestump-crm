@@ -150,9 +150,13 @@ export function Campaign() {
                     isConfirming={state === 'confirming'}
                   />
                 )}
-                {m.role === 'ai' && m.type === 'live_tracking' && (
-                  <LiveStatsPanel stats={stats} recommendation={recommendation} />
-                )}
+                {m.role === 'ai' && m.type === 'live_tracking' && (() => {
+                  console.log('--- LIVE STATS DEBUG ---');
+                  console.log('campaignId:', campaignId);
+                  console.log('enabled:', state === 'live_tracking');
+                  console.log('statsData:', stats);
+                  return <LiveStatsPanel stats={stats} recommendation={recommendation} />;
+                })()}
 
                 {m.role === 'ai' && !m.type && m.content && (
                   <div className="bg-surface2 text-text-primary py-3 px-5 rounded-[20px] rounded-tl-[4px] max-w-[70%]">

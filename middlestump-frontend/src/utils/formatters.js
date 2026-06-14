@@ -17,7 +17,9 @@ export const humanizeSegmentTerms = (text) => {
   let result = text
   for (const [key, value] of Object.entries(replacements)) {
     // Replace the quoted term or the raw boundary term with the unquoted value
-    result = result.replace(new RegExp(`'${key}'|"${key}"|\\b${key}\\b`, 'gi'), value)
+    result = result.replace(new RegExp(`'${key}'|"${key}"|\\b${key}\\b`, 'g'), value)
   }
+  // Final pass: strip any remaining stray quotes around words/phrases
+  result = result.replace(/['"]([A-Za-z0-9][^'"]*?)['"]/g, '$1')
   return result
 }
