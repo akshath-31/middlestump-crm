@@ -160,8 +160,8 @@ React + Vite frontend application
 middlestump-backend/
 FastAPI backend, AI orchestration, campaign execution, and analytics
 
-stub-service/
-Messaging simulator and callback engine
+middlestump-stub/
+FastAPI messaging simulator and callback engine (Python)
 
 assets/
 Architecture and workflow diagrams
@@ -178,16 +178,23 @@ Ensure you have a Supabase project initialized with the required `shoppers`, `ca
 ```bash
 cd middlestump-backend
 pip install -r requirements.txt
-# Configure .env with SUPABASE_URL, SUPABASE_KEY, and GEMINI_API_KEY
+# Configure .env with:
+# SUPABASE_URL=
+# SUPABASE_KEY=
+# GEMINI_API_KEY=
+# GEMINI_API_KEY_BACKUP=
+# GEMINI_MODEL=gemini-2.5-flash
+# STUB_SERVICE_URL=
+# BACKEND_URL=
 uvicorn main:app --reload
 ```
 
 ### 3. Stub Service
-*(Requires Node.js)*
 ```bash
-cd stub-service
-npm install
-node index.js
+cd middlestump-stub
+pip install -r requirements.txt
+# Configure .env using .env.example as a template
+uvicorn main:app --reload --port 8001
 ```
 
 ### 4. Frontend
