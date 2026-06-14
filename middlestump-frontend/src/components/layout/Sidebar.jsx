@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw, TrendingUp } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
 export function Sidebar() {
@@ -77,7 +77,7 @@ export function Sidebar() {
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Smart Segmentation</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    Analyzes your shoppers to find high-value audiences — lapsed buyers, churn risks, IPL season buyers, and more — based on real purchase history.
+                    Analyzes your shoppers to find high-value audiences like lapsed buyers, churn risks, IPL season buyers, and more based on real purchase history.
                   </p>
                 </div>
               </div>
@@ -89,7 +89,7 @@ export function Sidebar() {
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Campaign Strategy</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    Recommends who to target, what to say, and which channel works best — with reasoning for every decision, not just a message generator.
+                    Recommends who to target, what to say, and which channel works best with reasoning for every decision, not just a message generator.
                   </p>
                 </div>
               </div>
@@ -101,19 +101,19 @@ export function Sidebar() {
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Personalized Messaging</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    Generates unique messages per shopper using their name, last purchase, and order history — across WhatsApp, SMS, and Email.
+                    Generates unique messages per shopper using their name, last purchase, and order history across WhatsApp, SMS, and Email.
                   </p>
                 </div>
               </div>
               
               <div className="flex">
                 <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
-                  <BarChart className="w-[18px] h-[18px]" />
+                  <TrendingUp className="w-[18px] h-[18px]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-text-primary mb-1">Performance Prediction</h3>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Performance Analysis</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    Forecasts open rates, click rates, and conversions before you send — then compares actual results after the campaign runs.
+                    Compares actual campaign results against predictions using AI to suggest actionable next steps.
                   </p>
                 </div>
               </div>
@@ -126,6 +126,18 @@ export function Sidebar() {
                   <h3 className="text-sm font-bold text-text-primary mb-1">Continuous Opportunities</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
                     Scans your business data on demand to surface fresh campaign ideas as your shopper base changes.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <BarChart className="w-[18px] h-[18px]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Performance Prediction</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Forecasts open rates, click rates, and conversions before you send.
                   </p>
                 </div>
               </div>
