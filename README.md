@@ -10,7 +10,7 @@
 | ---------------------- | ----------------------------------- |
 | Frontend               | https://middlestump-crm.vercel.app/ |
 | Backend API            | <insert backend url>                |
-| Stub Messaging Service | <insert stub url>                   |
+| Stub Messaging Service | https://middlestump-stub.onrender.com |
 
 ---
 
