@@ -190,26 +190,35 @@ Be brief. Be creative and vary the framing each time."""
 
     try:
         response = await call_gemini_with_fallback(prompt, generation_config, request_options={"timeout": 45})
-        logger.info("Gemini response received for opportunities")
+        logger.info(f"Opportunity response length: {len(response.text)}")
+        logger.info(f"Opportunity response preview: {response.text[:500]}")
         result = parse_json_response(response.text)
         if isinstance(result, list) and len(result) > 0:
             return result
         raise ValueError("Empty or invalid response")
     except (json.JSONDecodeError, ValueError) as e:
+        logger.warning(f"Exception type: {type(e).__name__}")
+        logger.warning(f"Exception message: {str(e)}")
         logger.warning(f"First parse failed: {e}. Retrying with strict JSON prompt.")
         retry_prompt = prompt + "\n\nYour previous response was not valid JSON. Respond with valid JSON only."
         try:
             response = await call_gemini_with_fallback(retry_prompt, generation_config, request_options={"timeout": 45})
+            logger.info(f"Opportunity retry response length: {len(response.text)}")
+            logger.info(f"Opportunity retry response preview: {response.text[:500]}")
             result = parse_json_response(response.text)
             if isinstance(result, list) and len(result) > 0:
                 logger.info("Retry succeeded")
                 return result
             raise ValueError("Empty or invalid response")
         except Exception as e2:
+            logger.warning(f"Exception type: {type(e2).__name__}")
+            logger.warning(f"Exception message: {str(e2)}")
             logger.error(f"Second Gemini call failed: {e2}")
             logger.info("Returning fallback opportunities")
             return FALLBACK_OPPORTUNITIES
     except Exception as e:
+        logger.warning(f"Exception type: {type(e).__name__}")
+        logger.warning(f"Exception message: {str(e)}")
         logger.error(f"Opportunities generation failed: {e}")
         logger.info("Returning fallback opportunities")
         return FALLBACK_OPPORTUNITIES
