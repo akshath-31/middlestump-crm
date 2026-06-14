@@ -1,20 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, List, Users } from 'lucide-react';
-import { getContext } from '../../api/client';
+import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw } from 'lucide-react';
+import logo from '../../assets/logo.png';
 import logo from '../../assets/logo.png';
 
 export function Sidebar() {
-  const [isApiLive, setIsApiLive] = useState(false);
-
-  useEffect(() => {
-    // Ping the backend to check if it's live
-    fetch(import.meta.env.VITE_API_BASE_URL)
-      .then(res => {
-        if (res.ok) setIsApiLive(true);
-      })
-      .catch(() => setIsApiLive(false));
-  }, []);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Overview' },
@@ -50,20 +41,99 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-sidebar-active mt-auto">
-        <div className="bg-sidebar-active/50 rounded-xl p-4 mb-4 border border-sidebar-active">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full bg-sidebar-active/50 hover:bg-sidebar-active/80 transition-colors rounded-xl p-4 border border-sidebar-active text-left group"
+        >
           <div className="flex items-center mb-1">
             <span className="text-lg mr-2">✨</span>
             <span className="text-white font-medium text-xs uppercase tracking-wide">AI Strategist</span>
           </div>
-          <p className="text-[11px] text-text-muted leading-relaxed">
-            Your AI assistant is monitoring shopper segments for new revenue opportunities.
+          <p className="text-[12px] text-text-muted leading-relaxed group-hover:text-white transition-colors mt-2 font-medium">
+            Click to see what I can do &rarr;
           </p>
-        </div>
-        <div className="flex items-center text-xs text-text-muted">
-          <span className={`w-2 h-2 rounded-full mr-2 ${isApiLive ? 'bg-primary' : 'bg-danger'}`}></span>
-          MiddleStump CRM
-        </div>
+        </button>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface border border-border w-full max-w-[480px] rounded-[16px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border/50">
+              <h2 className="text-xl font-serif font-bold text-text-primary flex items-center">
+                <span className="mr-2">✨</span> What your AI Strategist does
+              </h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-text-muted hover:text-text-primary transition-colors bg-surface2 hover:bg-border rounded-full p-1.5"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Smart Segmentation</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Analyzes your shoppers to find high-value audiences — lapsed buyers, churn risks, IPL season buyers, and more — based on real purchase history.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
+                  <LayoutDashboard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Campaign Strategy</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Recommends who to target, what to say, and which channel works best — with reasoning for every decision, not just a message generator.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Personalized Messaging</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Generates unique messages per shopper using their name, last purchase, and order history — across WhatsApp, SMS, and Email.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
+                  <BarChart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Performance Prediction</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Forecasts open rates, click rates, and conversions before you send — then compares actual results after the campaign runs.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex">
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-primary mb-1">Continuous Opportunities</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Scans your business data on demand to surface fresh campaign ideas as your shopper base changes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
