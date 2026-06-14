@@ -44,6 +44,8 @@ export const analyzeCampaign = (goal) => api.post('/api/ai/analyze', { goal }).t
 export const confirmCampaign = (campaign_id) => api.post('/api/ai/confirm', { campaign_id }).then(res => res.data);
 export const getCampaignStats = (id) => api.get(`/api/campaigns/${id}`).then(res => res.data);
 export const getCampaignCommunications = (id) => api.get(`/api/campaigns/${id}/communications`).then(res => res.data);
+export const getCampaignAudience = (id) => api.get(`/api/campaigns/${id}/audience`).then(res => res.data);
+export const analyzeCampaignResults = (id) => api.post(`/api/ai/analyze-campaign/${id}`).then(res => res.data);
 export const getCampaigns = () => api.get('/api/campaigns').then(res => res.data);
 export const getShoppers = (params) => api.get('/api/shoppers', { params }).then(res => res.data);
 export const getShopper = (id) => api.get(`/api/shoppers/${id}`).then(res => res.data);

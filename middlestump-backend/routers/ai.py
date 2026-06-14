@@ -325,3 +325,49 @@ async def get_summary(campaign_id: str):
     except Exception as e:
         logger.error(f"Error in /summary: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/analyze-campaign/{campaign_id}")
+async def analyze_campaign_results(campaign_id: str):
+    try:
+        camp_res = supabase.table("campaigns").select("*").eq("id", campaign_id).execute()
+        if not camp_res.data:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+        campaign = camp_res.data[0]
+        
+        goal = campaign.get("goal", "")
+        channel = campaign.get("channel", "")
+        total_sent = campaign.get("total_sent", 0)
+        total_delivered = campaign.get("total_delivered", 0)
+        total_opened = campaign.get("total_opened", 0)
+        total_clicked = campaign.get("total_clicked", 0)
+        total_converted = campaign.get("total_converted", 0)
+        total_failed = campaign.get("total_failed", 0)
+        
+        pred_open = campaign.get("predicted_open_rate", 0)
+        pred_click = campaign.get("predicted_click_rate", 0)
+        pred_conv = campaign.get("predicted_conversions", 0)
+        
+        prompt = f"""You are a marketing analyst. Given this campaign's actual results vs predictions, write a 3-4 sentence analysis covering: how it performed vs predictions, one standout metric (positive or negative), and one specific actionable recommendation. Be direct and concise. No markdown, no headers.
+
+Campaign goal: {goal}
+Channel: {channel}
+Sent: {total_sent}, Delivered: {total_delivered}, Opened: {total_opened}, Clicked: {total_clicked}, Converted: {total_converted}, Failed: {total_failed}
+Predicted open rate: {pred_open}%, Predicted click rate: {pred_click}%, Predicted conversions: {pred_conv}"""
+
+        from services.gemini import call_gemini_with_fallback
+        
+        try:
+            res_text = await call_gemini_with_fallback(prompt, max_tokens=None, temperature=0.7)
+            if not res_text:
+                raise Exception("Empty response")
+        except Exception as e:
+            logger.warning(f"Gemini analysis failed, using fallback: {e}")
+            open_rate = round((total_opened / total_sent * 100), 1) if total_sent > 0 else 0
+            res_text = f"This campaign reached {total_sent} shoppers via {channel} with a {open_rate}% open rate."
+
+        return {"analysis": res_text}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in /analyze-campaign: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -35,3 +35,40 @@ async def get_campaign_communications(campaign_id: str):
     except Exception as e:
         logger.error(f"Error fetching communications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{campaign_id}/audience")
+async def get_campaign_audience(campaign_id: str):
+    from datetime import date, timedelta
+    try:
+        camp_res = supabase.table("campaigns").select("segment_filter").eq("id", campaign_id).execute()
+        if not camp_res.data:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+            
+        segment = camp_res.data[0].get("segment_filter", {})
+        
+        query = supabase.table("shoppers").select("id, name, city, shopper_type, total_spend, last_order_date, tags")
+        filter_tags = segment.get("filter_tags") or []
+        shopper_types = segment.get("shopper_types") or []
+        min_spend = segment.get("min_spend")
+        min_days = segment.get("min_days_since_order")
+        max_days = segment.get("max_days_since_order")
+        
+        if filter_tags: query = query.contains("tags", filter_tags)
+        if shopper_types: query = query.in_("shopper_type", shopper_types)
+        if min_spend is not None: query = query.gte("total_spend", min_spend)
+            
+        today = date.today()
+        if min_days is not None:
+            max_date = today - timedelta(days=min_days)
+            query = query.lte("last_order_date", max_date.isoformat())
+        if max_days is not None:
+            min_date = today - timedelta(days=max_days)
+            query = query.gte("last_order_date", min_date.isoformat())
+            
+        shoppers = query.execute().data
+        return shoppers
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching campaign audience: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

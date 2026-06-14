@@ -4,6 +4,8 @@ import { getCampaigns } from '../api/client';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
 import { DeliveryLog } from '../components/campaign/DeliveryLog';
+import { CampaignAudience } from '../components/campaign/CampaignAudience';
+import { CampaignAnalysis } from '../components/campaign/CampaignAnalysis';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -30,7 +32,18 @@ export function Campaigns() {
     queryFn: getCampaigns,
   });
 
-  const [expandedId, setExpandedId] = useState(null);
+  const [openPanels, setOpenPanels] = useState({});
+
+  const togglePanel = (e, id, panel) => {
+    e.stopPropagation();
+    setOpenPanels(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [panel]: !prev[id]?.[panel]
+      }
+    }));
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full text-text-muted">Loading campaigns...</div>;
@@ -58,13 +71,15 @@ export function Campaigns() {
           const openRate = delivered ? ((opened / delivered) * 100).toFixed(1) : '0.0';
           const clickRate = opened ? ((clicked / opened) * 100).toFixed(1) : '0.0';
           const convRate = clicked ? ((converted / clicked) * 100).toFixed(1) : '0.0';
-          const isExpanded = expandedId === c.id;
+          const isLogExpanded = openPanels[c.id]?.log;
+          const isAudienceExpanded = openPanels[c.id]?.audience;
+          const isAnalysisExpanded = openPanels[c.id]?.analysis;
 
           return (
             <div key={c.id} className="bg-surface border border-border rounded-lg shadow-sm overflow-hidden transition-all">
               <div 
                 className="p-5 flex flex-col lg:flex-row lg:items-center cursor-pointer hover:bg-surface2 transition-colors"
-                onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                onClick={(e) => togglePanel(e, c.id, 'log')}
               >
                 <div className="flex-1 mb-4 lg:mb-0 pr-4">
                   <div className="flex items-center space-x-3 mb-2">
@@ -72,12 +87,29 @@ export function Campaigns() {
                     <StatusBadge status={c.status} />
                   </div>
                   <div className="text-sm text-text-secondary mb-3">{c.goal}</div>
-                  <div className="flex items-center space-x-2 text-xs">
+                  <div className="flex items-center space-x-2 text-xs mb-4">
                     <SegmentBadge segment={c.target_segment} />
                     <span className="text-text-muted">•</span>
                     <span className="bg-surface2 px-2 py-1 rounded text-text-secondary font-semibold uppercase">{c.channel}</span>
                     <span className="text-text-muted">•</span>
                     <span className="text-text-muted">{formatDate(c.created_at)}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-3 mt-2">
+                    <button 
+                      onClick={(e) => togglePanel(e, c.id, 'audience')}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-border hover:bg-surface2 transition-colors text-[13px] font-medium text-text-primary"
+                    >
+                      <span>👥</span>
+                      <span>{isAudienceExpanded ? 'Hide Audience' : 'Show Audience'}</span>
+                    </button>
+                    <button 
+                      onClick={(e) => togglePanel(e, c.id, 'analysis')}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-border hover:bg-surface2 transition-colors text-[13px] font-medium text-text-primary"
+                    >
+                      <span>✨</span>
+                      <span>{isAnalysisExpanded ? 'Hide Analysis' : 'Analyse with AI'}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -109,7 +141,19 @@ export function Campaigns() {
                 </div>
               </div>
 
-              {isExpanded && (
+              {isAudienceExpanded && (
+                <div className="border-t border-border bg-surface2">
+                  <CampaignAudience campaignId={c.id} />
+                </div>
+              )}
+
+              {isAnalysisExpanded && (
+                <div className="border-t border-border bg-surface2">
+                  <CampaignAnalysis campaign={c} />
+                </div>
+              )}
+
+              {isLogExpanded && (
                 <div className="p-5 border-t border-border bg-surface2">
                   <h4 className="font-bold text-sm text-text-primary mb-2">Delivery Log</h4>
                   <DeliveryLog campaignId={c.id} />
