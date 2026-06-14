@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessContext } from '../hooks/useBusinessContext';
 import { useQuery } from '@tanstack/react-query';
-import { getCampaigns } from '../api/client';
+import { getCampaigns, getOpportunities } from '../api/client';
 import { StatCard } from '../components/ui/StatCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
+import { Sparkles, MessageCircle, MessageSquare, Mail, ArrowRight, Loader2 } from 'lucide-react';
 
 export function Overview() {
   const navigate = useNavigate();
@@ -30,15 +31,24 @@ export function Overview() {
   const totalSentAll = campaigns?.reduce((sum, c) => sum + (c.total_sent || 0), 0) || 0;
   const overallConversionRate = totalSentAll > 0 ? ((totalConvertedAll / totalSentAll) * 100).toFixed(1) : "0.0";
   
-  // Format segments data
-  const segmentHealth = [
-    { id: 'lapsed_6m', name: 'Lapsed (6m+)', count: context?.segment_sizes?.lapsed_6m || 0, desc: 'Shoppers who haven\'t purchased in over 6 months.' },
-    { id: 'high_value', name: 'High Value', count: context?.segment_sizes?.high_value || 0, desc: 'Top tier spenders.' },
-    { id: 'churn_risk', name: 'Churn Risk', count: context?.segment_sizes?.churn_risk || 0, desc: 'Showing signs of disengagement.' },
-    { id: 'ipl_buyers', name: 'IPL Season Buyers', count: context?.segment_sizes?.ipl_buyers || 0, desc: 'Purchased during previous IPL seasons.' },
-    { id: 'first_timers', name: 'First Timers', count: context?.segment_sizes?.first_timers || 0, desc: 'Made exactly one purchase recently.' },
-    { id: 'academy_coaches', name: 'Academy Coaches', count: context?.segment_sizes?.academy_coaches || 0, desc: 'High volume equipment buyers.' },
-  ];
+  const [aiOpportunities, setAiOpportunities] = useState(null);
+  const [loadingOpportunities, setLoadingOpportunities] = useState(false);
+
+  const handleFindOpportunities = async () => {
+    setLoadingOpportunities(true);
+    try {
+      const data = await getOpportunities();
+      setAiOpportunities(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingOpportunities(false);
+    }
+  };
+
+  const handleCreateCampaign = (suggestedGoal) => {
+    navigate('/campaign', { state: { prefillGoal: suggestedGoal } });
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -54,26 +64,122 @@ export function Overview() {
         <StatCard title="Overall Conversion Rate" value={`${overallConversionRate}%`} color="green" />
       </div>
 
-      <div>
-        <h2 className="font-serif text-2xl font-bold text-text-primary mb-1">Segment Health</h2>
-        <p className="text-sm text-text-secondary mb-4">AI-identified opportunities in your shopper base</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {segmentHealth.map(seg => (
-            <div key={seg.id} className="bg-surface border border-border/70 p-5 rounded-xl flex flex-col hover:border-primary/50 transition-colors shadow-sm">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-serif font-bold text-xl text-text-primary">{seg.name}</h3>
-                <span className="font-serif text-3xl font-bold text-primary">{seg.count}</span>
-              </div>
-              <p className="text-sm text-text-secondary mb-4 flex-1">{seg.desc}</p>
-              <button 
-                onClick={() => navigate('/campaign', { state: { presetGoal: `Target ${seg.name.toLowerCase()} segment` } })}
-                className="text-primary text-sm font-semibold hover:text-primary-hover self-start mt-auto flex items-center"
-              >
-                Create Campaign <span className="ml-1">→</span>
-              </button>
-            </div>
-          ))}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: '24px',
+        padding: '32px',
+        border: '1px solid rgba(22, 163, 74, 0.1)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          background: 'radial-gradient(circle, rgba(22, 163, 74, 0.08) 0%, transparent 70%)',
+          width: '400px', height: '400px',
+          position: 'absolute', top: '-20%', right: '-10%',
+          pointerEvents: 'none'
+        }}></div>
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 relative z-10">
+          <div>
+            <h2 className="font-serif text-[20px] font-bold text-text-primary flex items-center mb-1">
+              <Sparkles className="w-5 h-5 mr-2 text-primary" />
+              AI Opportunities
+            </h2>
+            <p className="font-sans text-[13px] text-text-muted font-normal">Let AI identify your best campaign targets right now.</p>
+          </div>
+          <button
+            onClick={handleFindOpportunities}
+            disabled={loadingOpportunities}
+            className="mt-4 sm:mt-0 flex items-center justify-center px-4 py-2 border border-primary text-primary bg-transparent rounded-full text-sm font-medium hover:bg-primary/5 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loadingOpportunities ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Thinking...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                {aiOpportunities === null ? "Find Opportunities with AI" : "Find New Opportunities"}
+              </>
+            )}
+          </button>
         </div>
+
+        {loadingOpportunities ? (
+          <div className="relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} style={{
+                  background: '#F1F5F9',
+                  borderRadius: '12px',
+                  height: '180px',
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}></div>
+              ))}
+            </div>
+            <p className="text-center text-text-muted text-sm mt-6">AI is analyzing your shopper base... this may take up to 20 seconds</p>
+          </div>
+        ) : aiOpportunities !== null ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+            {aiOpportunities.map((opp, idx) => (
+              <div key={idx} style={{
+                background: '#F8FAFC',
+                borderRadius: '12px',
+                padding: '20px',
+                border: '1px solid #E2E8F0',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <div className="flex justify-between items-start mb-3">
+                  <span style={{
+                    display: 'inline-block',
+                    borderRadius: '9999px',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    ...(opp.priority === 'high' 
+                      ? { background: 'rgba(220, 38, 38, 0.1)', color: '#DC2626' }
+                      : opp.priority === 'medium'
+                        ? { background: 'rgba(217, 119, 6, 0.1)', color: '#D97706' }
+                        : { background: '#F1F5F9', color: '#64748B' }
+                    )
+                  }}>
+                    {opp.priority}
+                  </span>
+                  {opp.suggested_channel === 'whatsapp' && <MessageCircle className="w-4 h-4 text-slate-500" />}
+                  {opp.suggested_channel === 'sms' && <MessageSquare className="w-4 h-4 text-slate-500" />}
+                  {opp.suggested_channel === 'email' && <Mail className="w-4 h-4 text-slate-500" />}
+                </div>
+
+                <h3 className="font-serif font-bold text-[16px] text-text-primary leading-tight mb-1">{opp.title}</h3>
+                <p className="font-sans text-[11px] uppercase tracking-wide text-text-muted mb-3">{opp.segment_name}</p>
+
+                <p className="font-sans text-[13px] text-text-secondary line-clamp-2 mb-4 flex-1">
+                  {opp.why_it_matters}
+                </p>
+
+                <div className="flex items-center justify-between text-sm font-medium mb-4">
+                  <span className="flex items-center text-text-primary">
+                    👥 {opp.estimated_reach?.toLocaleString() || 0} shoppers
+                  </span>
+                  <span className="text-text-primary">
+                    💰 ₹{opp.estimated_revenue?.toLocaleString('en-IN') || 0}
+                  </span>
+                </div>
+
+                <button 
+                  onClick={() => handleCreateCampaign(opp.suggested_goal)}
+                  className="font-sans text-[#16A34A] text-[13px] font-medium hover:underline self-start flex items-center group"
+                >
+                  Create Campaign <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div>

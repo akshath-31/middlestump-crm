@@ -3,12 +3,22 @@ import json
 import logging
 import asyncio
 import google.generativeai as genai
+import re
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+FALLBACK_OPPORTUNITIES = [
+    {"title": "Win Back Lapsed High-Spenders", "segment_name": "Lapsed High Value", "priority": "high", "estimated_reach": 245, "why_it_matters": "They used to spend big, now they are quiet.", "suggested_goal": "Target high value lapsed shoppers with an exclusive offer", "suggested_channel": "email", "estimated_revenue": 85000},
+    {"title": "Convert First Timers", "segment_name": "First Timers", "priority": "medium", "estimated_reach": 850, "why_it_matters": "Second purchase creates loyalty.", "suggested_goal": "Welcome first timers back with a small discount", "suggested_channel": "whatsapp", "estimated_revenue": 45000},
+    {"title": "Save Churning Users", "segment_name": "Churn Risk", "priority": "high", "estimated_reach": 120, "why_it_matters": "Preventing churn is cheaper than acquisition.", "suggested_goal": "Check in with churn risk users", "suggested_channel": "whatsapp", "estimated_revenue": 30000},
+    {"title": "Engage IPL Buyers", "segment_name": "IPL Season Buyers", "priority": "medium", "estimated_reach": 540, "why_it_matters": "Seasonality drives their purchases.", "suggested_goal": "Send IPL buyers new season gear", "suggested_channel": "sms", "estimated_revenue": 60000},
+    {"title": "Upsell Academy Coaches", "segment_name": "Academy Coaches", "priority": "low", "estimated_reach": 45, "why_it_matters": "Consistent bulk buyers.", "suggested_goal": "Offer academy coaches bulk purchase discounts", "suggested_channel": "email", "estimated_revenue": 120000},
+    {"title": "Reactivate Dormant Accounts", "segment_name": "Lapsed 6m+", "priority": "low", "estimated_reach": 1500, "why_it_matters": "Large dormant audience to tap into.", "suggested_goal": "Reactivate 6 month lapsed users", "suggested_channel": "sms", "estimated_revenue": 25000}
+]
 
 async def call_gemini_with_fallback(prompt, generation_config=None, request_options=None):
     keys = [
@@ -155,3 +165,37 @@ Write a plain English paragraph (3-4 sentences) that:
     except Exception as e:
         logger.error(f"Gemini summary call failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate summary")
+
+async def generate_opportunities(context: dict) -> list:
+    context_summary = f"""
+Total shoppers: {context.get('total_shoppers', 0)}
+Lapsed 6m: {context.get('segment_sizes', {}).get('lapsed_6m', 0)}
+High value: {context.get('segment_sizes', {}).get('high_value', 0)}
+Churn risk: {context.get('segment_sizes', {}).get('churn_risk', 0)}
+IPL buyers: {context.get('segment_sizes', {}).get('ipl_buyers', 0)}
+First timers: {context.get('segment_sizes', {}).get('first_timers', 0)}
+Academy coaches: {context.get('segment_sizes', {}).get('academy_coaches', 0)}
+Revenue trend: {context.get('revenue', {}).get('trend', 'stable')}
+"""
+    prompt = f"""You are a cricket brand CRM strategist. Given these shopper segments, identify 6 DIFFERENT campaign opportunities. Vary your selection — consider urgency, seasonality, channel mix, segment combinations. Return a raw JSON array. No markdown. No backticks. Start with [ and end with ].
+
+Segments:
+{context_summary}
+
+Each object must have: title (max 5 words), segment_name, priority (high/medium/low), estimated_reach (int), why_it_matters (max 12 words), suggested_goal (one sentence), suggested_channel (whatsapp/sms/email), estimated_revenue (float).
+Be brief. Be creative and vary the framing each time."""
+
+    generation_config = genai.types.GenerationConfig(max_output_tokens=600, temperature=0.9)
+
+    try:
+        response = await call_gemini_with_fallback(prompt, generation_config)
+        raw = response.text.strip()
+        raw = re.sub(r'^```json\s*|^```\s*|```$', '', raw, flags=re.MULTILINE).strip()
+        result = json.loads(raw)
+        if isinstance(result, list) and len(result) > 0:
+            return result
+        raise ValueError("Empty or invalid response")
+    except Exception as e:
+        logger.error(f"Opportunities generation failed: {e}")
+        return FALLBACK_OPPORTUNITIES
+
