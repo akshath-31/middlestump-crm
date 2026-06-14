@@ -19,19 +19,13 @@ export function useCampaignStats(campaignId, enabled = false) {
       if (data && data.status === 'completed') return false;
       
       const sent = data?.total_sent || 0;
-      const delivered = data?.total_delivered || 0;
-      const failed = data?.total_failed || 0;
-      
-      if (sent > 0 && sent <= delivered + failed) {
-        return false;
-      }
       
       if (pollingStartTime) {
         const pollingTimeout = sent > 50 ? 240000 : 120000;
         const age = Date.now() - pollingStartTime;
         if (age > pollingTimeout) return false;
       }
-      return 3000;
+      return 1000; // Poll every 1s for fast updates
     },
     enabled: !!campaignId && enabled,
   });
@@ -40,12 +34,6 @@ export function useCampaignStats(campaignId, enabled = false) {
   let isComplete = data?.status === 'completed';
   
   const sent = data?.total_sent || 0;
-  const delivered = data?.total_delivered || 0;
-  const failed = data?.total_failed || 0;
-  
-  if (sent > 0 && sent <= delivered + failed) {
-    isComplete = true;
-  }
   
   if (!isComplete && pollingStartTime) {
     const pollingTimeout = sent > 50 ? 240000 : 120000;
