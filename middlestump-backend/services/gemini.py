@@ -151,6 +151,7 @@ Predicted Stats:
 - Click Rate: {campaign.get('predicted_click_rate')}
 - Conversions: {campaign.get('predicted_conversions')}
 
+
 Actual Stats:
 {json.dumps(actual_stats, indent=2)}
 
@@ -189,28 +190,27 @@ Be brief. Be creative and vary the framing each time."""
 
     try:
         response = await call_gemini_with_fallback(prompt, generation_config, request_options={"timeout": 45})
-        raw = response.text.strip()
-        raw = re.sub(r'^```json\s*|^```\s*|```$', '', raw, flags=re.MULTILINE).strip()
-        
-        logger.info(f"OPPORTUNITIES RAW RESPONSE LENGTH: {len(raw)}")
-        logger.info(f"OPPORTUNITIES RAW RESPONSE (last 200 chars): {raw[-200:]}")
-        
-        try:
-            result = json.loads(raw)
-        except json.JSONDecodeError as je:
-            logger.warning(f"First parse failed: {je}, attempting repair")
-            # try to find the last complete object and close the array
-            last_brace = raw.rfind('}')
-            if last_brace != -1:
-                repaired = raw[:last_brace+1] + ']'
-                result = json.loads(repaired)
-            else:
-                raise
-
+        logger.info("Gemini response received for opportunities")
+        result = parse_json_response(response.text)
         if isinstance(result, list) and len(result) > 0:
             return result
         raise ValueError("Empty or invalid response")
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning(f"First parse failed: {e}. Retrying with strict JSON prompt.")
+        retry_prompt = prompt + "\n\nYour previous response was not valid JSON. Respond with valid JSON only."
+        try:
+            response = await call_gemini_with_fallback(retry_prompt, generation_config, request_options={"timeout": 45})
+            result = parse_json_response(response.text)
+            if isinstance(result, list) and len(result) > 0:
+                logger.info("Retry succeeded")
+                return result
+            raise ValueError("Empty or invalid response")
+        except Exception as e2:
+            logger.error(f"Second Gemini call failed: {e2}")
+            logger.info("Returning fallback opportunities")
+            return FALLBACK_OPPORTUNITIES
     except Exception as e:
         logger.error(f"Opportunities generation failed: {e}")
+        logger.info("Returning fallback opportunities")
         return FALLBACK_OPPORTUNITIES
 
