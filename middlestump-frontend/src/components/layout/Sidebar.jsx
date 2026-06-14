@@ -7,8 +7,8 @@ export function Sidebar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Overview' },
-    { to: '/campaign', icon: MessageSquare, label: 'Campaign' },
+    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/campaign', icon: MessageSquare, label: 'AI Strategist' },
     { to: '/campaigns', icon: List, label: 'Campaigns' },
     { to: '/shoppers', icon: Users, label: 'Shoppers' },
   ];
@@ -71,8 +71,8 @@ export function Sidebar() {
             
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="flex">
-                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
-                  <Target className="w-5 h-5" />
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <Target className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Smart Segmentation</h3>
@@ -83,8 +83,8 @@ export function Sidebar() {
               </div>
               
               <div className="flex">
-                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
-                  <LayoutDashboard className="w-5 h-5" />
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <LayoutDashboard className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Campaign Strategy</h3>
@@ -95,8 +95,8 @@ export function Sidebar() {
               </div>
               
               <div className="flex">
-                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
-                  <MessageSquare className="w-5 h-5" />
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <MessageSquare className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Personalized Messaging</h3>
@@ -107,8 +107,8 @@ export function Sidebar() {
               </div>
               
               <div className="flex">
-                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
-                  <BarChart className="w-5 h-5" />
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <BarChart className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Performance Prediction</h3>
@@ -119,8 +119,8 @@ export function Sidebar() {
               </div>
               
               <div className="flex">
-                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 p-2 rounded-lg text-primary">
-                  <RefreshCw className="w-5 h-5" />
+                <div className="mt-0.5 mr-4 flex-shrink-0 bg-primary/10 w-[36px] h-[36px] flex items-center justify-center rounded-lg text-primary">
+                  <RefreshCw className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary mb-1">Continuous Opportunities</h3>

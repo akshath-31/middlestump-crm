@@ -53,9 +53,11 @@ export function Overview() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-text-primary mb-1">Overview</h1>
-        <p className="text-text-secondary">Welcome back. Here's what's happening today.</p>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-text-primary mb-2 tracking-tight">Dashboard</h1>
+          <p className="text-text-secondary text-sm">Welcome back. Here's what's happening with your shoppers today.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

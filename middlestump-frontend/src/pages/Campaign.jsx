@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Wand2 } from 'lucide-react';
 import { analyzeCampaign, confirmCampaign } from '../api/client';
 import { useCampaignStats } from '../hooks/useCampaignStats';
 import { RecommendationCard } from '../components/campaign/RecommendationCard';
@@ -92,7 +93,10 @@ export function Campaign() {
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <div className="mb-4 shrink-0">
-        <h1 className="font-serif text-3xl font-bold text-text-primary mb-1">AI Campaign Builder</h1>
+        <div className="flex items-center space-x-3 mb-1">
+          <Wand2 className="w-6 h-6 text-primary" />
+          <h1 className="text-3xl font-serif font-bold text-text-primary tracking-tight">AI Builder</h1>
+        </div>
         <p className="text-sm text-text-secondary">Describe your goal. The AI handles the rest.</p>
       </div>
 

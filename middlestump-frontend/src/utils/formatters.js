@@ -30,5 +30,9 @@ export const humanizeSegmentTerms = (text) => {
 
   // Final pass: strip any remaining stray quotes around words/phrases
   result = result.replace(/['"]([A-Za-z0-9][^'"]*?)['"]/g, '$1')
+
+  // Remove word-hyphen-word patterns (e.g., "High-Value" -> "High Value")
+  result = result.replace(/([A-Za-z])-([A-Za-z])/g, '$1 $2')
+
   return result
 }
