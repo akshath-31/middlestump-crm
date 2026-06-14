@@ -9,7 +9,7 @@ from fastapi import HTTPException
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 FALLBACK_OPPORTUNITIES = [
     {"title": "Win Back Lapsed High-Spenders", "segment_name": "Lapsed High Value", "priority": "high", "estimated_reach": 245, "why_it_matters": "They used to spend big, now they are quiet.", "suggested_goal": "Target high value lapsed shoppers with an exclusive offer", "suggested_channel": "email", "estimated_revenue": 85000},
