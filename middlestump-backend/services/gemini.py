@@ -23,13 +23,15 @@ FALLBACK_OPPORTUNITIES = [
 async def call_gemini_with_fallback(prompt, generation_config=None, request_options=None):
     keys = [
         os.getenv("GEMINI_API_KEY"),
-        os.getenv("GEMINI_API_KEY_BACKUP")
+        os.getenv("GEMINI_API_KEY_BACKUP"),
+        os.getenv("GEMINI_API_KEY_BACKUP_2")
     ]
     keys = [k for k in keys if k]  # filter out None
     
     last_error = None
     for key in keys:
         try:
+            logger.info(f"Attempting Gemini API call with key ending in ...{key[-4:]}")
             genai.configure(api_key=key)
             model = genai.GenerativeModel(GEMINI_MODEL)
             # We use asyncio.to_thread with the synchronous generate_content
@@ -39,6 +41,7 @@ async def call_gemini_with_fallback(prompt, generation_config=None, request_opti
                 generation_config=generation_config,
                 request_options=request_options
             )
+            logger.info(f"Gemini API call succeeded with key ending in ...{key[-4:]}")
             return response
         except Exception as e:
             if "429" in str(e) or "quota" in str(e).lower():
