@@ -185,7 +185,7 @@ Segments:
 Each object must have: title (max 5 words), segment_name, priority (high/medium/low), estimated_reach (int), why_it_matters (max 12 words), suggested_goal (one sentence), suggested_channel (whatsapp/sms/email), estimated_revenue (float).
 Be brief. Be creative and vary the framing each time."""
 
-    generation_config = genai.types.GenerationConfig(max_output_tokens=2000, temperature=0.9)
+    generation_config = genai.types.GenerationConfig(temperature=0.9)
 
     try:
         response = await call_gemini_with_fallback(prompt, generation_config, request_options={"timeout": 45})
