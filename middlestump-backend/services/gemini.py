@@ -11,17 +11,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
 async def call_gemini_with_fallback(prompt, generation_config=None, request_options=None):
-    keys = [
-        os.getenv("GEMINI_API_KEY"),
-        os.getenv("GEMINI_API_KEY_BACKUP")
-    ]
-    keys = [k for k in keys if k]  # filter out None
-    
+    keys = [os.getenv("GEMINI_API_KEY"), os.getenv("GEMINI_API_KEY_BACKUP")]
+    keys = [k for k in keys if k]
     last_error = None
     for key in keys:
         try:
             genai.configure(api_key=key)
-            model = genai.GenerativeModel(GEMINI_MODEL)
+            model = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-2.5-flash"))
             # We use asyncio.to_thread with the synchronous generate_content
             response = await asyncio.to_thread(
                 model.generate_content,
@@ -32,12 +28,109 @@ async def call_gemini_with_fallback(prompt, generation_config=None, request_opti
             return response
         except Exception as e:
             if "429" in str(e) or "quota" in str(e).lower():
-                logger.warning(f"Key ending in ...{key[-4:]} hit quota limit, trying next key")
+                logger.warning(f"Gemini key ending ...{key[-4:] if key else ''} hit quota, trying next")
                 last_error = e
                 continue
-            raise e  # non-quota errors raise immediately
-    
-    raise last_error  # all keys exhausted
+            raise e
+    raise last_error
+
+FALLBACK_OPPORTUNITIES = [
+    {
+        "title": "Win Back VIPs",
+        "segment_name": "Lapsed High Value",
+        "priority": "high",
+        "estimated_reach": 150,
+        "why_it_matters": "They spend big but haven't bought in 6+ months",
+        "suggested_goal": "Re-engage lapsed high value shoppers",
+        "suggested_channel": "whatsapp",
+        "estimated_revenue": 150000
+    },
+    {
+        "title": "IPL Pre-Season Push",
+        "segment_name": "IPL Season Buyers",
+        "priority": "medium",
+        "estimated_reach": 850,
+        "why_it_matters": "Capitalize on upcoming cricket season hype",
+        "suggested_goal": "Target previous IPL buyers with new gear",
+        "suggested_channel": "email",
+        "estimated_revenue": 200000
+    },
+    {
+        "title": "Upgrade First Timers",
+        "segment_name": "First Timers",
+        "priority": "medium",
+        "estimated_reach": 400,
+        "why_it_matters": "Drive second purchase to build loyalty",
+        "suggested_goal": "Cross-sell to recent first time buyers",
+        "suggested_channel": "sms",
+        "estimated_revenue": 80000
+    },
+    {
+        "title": "Coach Bulk Deals",
+        "segment_name": "Academy Coaches",
+        "priority": "high",
+        "estimated_reach": 45,
+        "why_it_matters": "High volume, recurring revenue potential",
+        "suggested_goal": "Offer bulk discounts to academy coaches",
+        "suggested_channel": "whatsapp",
+        "estimated_revenue": 300000
+    },
+    {
+        "title": "Save At-Risk Shoppers",
+        "segment_name": "Churn Risk",
+        "priority": "high",
+        "estimated_reach": 300,
+        "why_it_matters": "Prevent loss of previously active customers",
+        "suggested_goal": "Send win-back offers to churn risk segment",
+        "suggested_channel": "email",
+        "estimated_revenue": 100000
+    },
+    {
+        "title": "Gifter Re-engagement",
+        "segment_name": "Gift Buyers",
+        "priority": "low",
+        "estimated_reach": 120,
+        "why_it_matters": "Target seasonal gifting occasions",
+        "suggested_goal": "Remind past gift buyers of new arrivals",
+        "suggested_channel": "email",
+        "estimated_revenue": 45000
+    }
+]
+
+import re
+
+async def generate_opportunities(context: dict) -> list:
+    context_summary = f"""
+Total shoppers: {context.get('total_shoppers', 0)}
+Lapsed 6m: {context.get('segment_sizes', {}).get('lapsed_6m', 0)}
+High value: {context.get('segment_sizes', {}).get('high_value', 0)}
+Churn risk: {context.get('segment_sizes', {}).get('churn_risk', 0)}
+IPL buyers: {context.get('segment_sizes', {}).get('ipl_buyers', 0)}
+First timers: {context.get('segment_sizes', {}).get('first_timers', 0)}
+Academy coaches: {context.get('segment_sizes', {}).get('academy_coaches', 0)}
+Revenue trend: {context.get('revenue', {}).get('trend', 'stable')}
+"""
+    prompt = f"""You are a cricket brand CRM strategist. Given these shopper segments, identify 6 DIFFERENT campaign opportunities. Vary your selection each time — consider different angles like urgency, seasonality, channel mix, and segment combinations. Return a raw JSON array. No markdown. No backticks. Start with [ and end with ].
+
+Segments:
+{context_summary}
+
+Each object must have: title (max 5 words), segment_name, priority (high/medium/low), estimated_reach (int), why_it_matters (max 12 words), suggested_goal (one sentence), suggested_channel (whatsapp/sms/email), estimated_revenue (float).
+Be brief. Keep all text short. Be creative and vary the framing each time."""
+
+    generation_config = genai.types.GenerationConfig(max_output_tokens=600, temperature=0.9)
+
+    try:
+        response = await call_gemini_with_fallback(prompt, generation_config)
+        raw = response.text.strip()
+        raw = re.sub(r'^```json\s*|^```\s*|```$', '', raw, flags=re.MULTILINE).strip()
+        result = json.loads(raw)
+        if isinstance(result, list) and len(result) > 0:
+            return result
+        raise ValueError("Empty or invalid response")
+    except Exception as e:
+        logger.error(f"Opportunities generation failed: {e}")
+        return FALLBACK_OPPORTUNITIES
 
 async def process_campaign_goal(goal: str, context: dict) -> dict:
     prompt = f"""You are the AI marketing strategist for MiddleStump, a D2C cricket equipment brand in India.
