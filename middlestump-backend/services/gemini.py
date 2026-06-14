@@ -185,13 +185,28 @@ Segments:
 Each object must have: title (max 5 words), segment_name, priority (high/medium/low), estimated_reach (int), why_it_matters (max 12 words), suggested_goal (one sentence), suggested_channel (whatsapp/sms/email), estimated_revenue (float).
 Be brief. Be creative and vary the framing each time."""
 
-    generation_config = genai.types.GenerationConfig(max_output_tokens=600, temperature=0.9)
+    generation_config = genai.types.GenerationConfig(max_output_tokens=2000, temperature=0.9)
 
     try:
         response = await call_gemini_with_fallback(prompt, generation_config, request_options={"timeout": 45})
         raw = response.text.strip()
         raw = re.sub(r'^```json\s*|^```\s*|```$', '', raw, flags=re.MULTILINE).strip()
-        result = json.loads(raw)
+        
+        logger.info(f"OPPORTUNITIES RAW RESPONSE LENGTH: {len(raw)}")
+        logger.info(f"OPPORTUNITIES RAW RESPONSE (last 200 chars): {raw[-200:]}")
+        
+        try:
+            result = json.loads(raw)
+        except json.JSONDecodeError as je:
+            logger.warning(f"First parse failed: {je}, attempting repair")
+            # try to find the last complete object and close the array
+            last_brace = raw.rfind('}')
+            if last_brace != -1:
+                repaired = raw[:last_brace+1] + ']'
+                result = json.loads(repaired)
+            else:
+                raise
+
         if isinstance(result, list) and len(result) > 0:
             return result
         raise ValueError("Empty or invalid response")
