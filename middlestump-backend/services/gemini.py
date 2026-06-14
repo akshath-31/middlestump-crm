@@ -188,7 +188,7 @@ Be brief. Be creative and vary the framing each time."""
     generation_config = genai.types.GenerationConfig(max_output_tokens=600, temperature=0.9)
 
     try:
-        response = await call_gemini_with_fallback(prompt, generation_config)
+        response = await call_gemini_with_fallback(prompt, generation_config, request_options={"timeout": 45})
         raw = response.text.strip()
         raw = re.sub(r'^```json\s*|^```\s*|```$', '', raw, flags=re.MULTILINE).strip()
         result = json.loads(raw)
