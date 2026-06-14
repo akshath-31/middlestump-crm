@@ -10,7 +10,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Overview />} />
+        <Route index element={<Navigate to="/campaign" replace />} />
+        <Route path="dashboard" element={<Overview />} />
         <Route path="campaign" element={<Campaign />} />
         <Route path="campaigns" element={<Campaigns />} />
         <Route path="shoppers" element={<Shoppers />} />

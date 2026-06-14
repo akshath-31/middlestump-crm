@@ -7,7 +7,7 @@ export function Sidebar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/campaign', icon: Sparkles, label: 'AI Strategist' },
     { to: '/campaigns', icon: List, label: 'Campaigns' },
     { to: '/shoppers', icon: Users, label: 'Shoppers' },
