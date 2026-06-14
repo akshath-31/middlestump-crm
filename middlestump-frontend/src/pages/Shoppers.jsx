@@ -6,9 +6,8 @@ import { MessageCircle } from 'lucide-react';
 export function Shoppers() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [type, setType] = useState('');
   
-  const { data, isLoading } = useShoppers({ page, limit: 50, search, shopper_type: type });
+  const { data, isLoading } = useShoppers({ page, limit: 50, search });
 
   const getLastOrderColor = (dateString) => {
     if (!dateString) return 'text-text-muted';
@@ -36,16 +35,6 @@ export function Shoppers() {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
-          <select 
-            className="px-4 py-2 border border-border rounded-md text-sm outline-none focus:border-primary transition-colors bg-white"
-            value={type}
-            onChange={e => { setType(e.target.value); setPage(1); }}
-          >
-            <option value="">All Types</option>
-            <option value="guest">Guest</option>
-            <option value="registered">Registered</option>
-            <option value="pro">Pro</option>
-          </select>
         </div>
       </div>
 
