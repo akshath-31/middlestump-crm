@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessContext } from '../hooks/useBusinessContext';
 import { useQuery } from '@tanstack/react-query';
-import { getCampaigns, getOpportunities } from '../api/client';
+import { getCampaigns } from '../api/client';
 import { StatCard } from '../components/ui/StatCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
@@ -14,25 +14,6 @@ export function Overview() {
     queryKey: ['campaigns'],
     queryFn: getCampaigns,
   });
-
-  const [aiOpportunities, setAiOpportunities] = useState(null);
-  const [loadingOpportunities, setLoadingOpportunities] = useState(false);
-
-  const handleFindOpportunities = async () => {
-    setLoadingOpportunities(true);
-    try {
-      const data = await getOpportunities();
-      setAiOpportunities(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingOpportunities(false);
-    }
-  };
-
-  const handleCreateCampaign = (suggestedGoal) => {
-    navigate('/campaign', { state: { prefillGoal: suggestedGoal } });
-  };
 
   if (isContextLoading || isCampaignsLoading) {
     return <div className="flex items-center justify-center h-full text-text-muted">Loading dashboard...</div>;
@@ -49,7 +30,15 @@ export function Overview() {
   const totalSentAll = campaigns?.reduce((sum, c) => sum + (c.total_sent || 0), 0) || 0;
   const overallConversionRate = totalSentAll > 0 ? ((totalConvertedAll / totalSentAll) * 100).toFixed(1) : "0.0";
   
-  const overallConversionRate = totalSentAll > 0 ? ((totalConvertedAll / totalSentAll) * 100).toFixed(1) : "0.0";
+  // Format segments data
+  const segmentHealth = [
+    { id: 'lapsed_6m', name: 'Lapsed (6m+)', count: context?.segment_sizes?.lapsed_6m || 0, desc: 'Shoppers who haven\'t purchased in over 6 months.' },
+    { id: 'high_value', name: 'High Value', count: context?.segment_sizes?.high_value || 0, desc: 'Top tier spenders.' },
+    { id: 'churn_risk', name: 'Churn Risk', count: context?.segment_sizes?.churn_risk || 0, desc: 'Showing signs of disengagement.' },
+    { id: 'ipl_buyers', name: 'IPL Season Buyers', count: context?.segment_sizes?.ipl_buyers || 0, desc: 'Purchased during previous IPL seasons.' },
+    { id: 'first_timers', name: 'First Timers', count: context?.segment_sizes?.first_timers || 0, desc: 'Made exactly one purchase recently.' },
+    { id: 'academy_coaches', name: 'Academy Coaches', count: context?.segment_sizes?.academy_coaches || 0, desc: 'High volume equipment buyers.' },
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -65,63 +54,26 @@ export function Overview() {
         <StatCard title="Overall Conversion Rate" value={`${overallConversionRate}%`} color="green" />
       </div>
 
-      <div className="bg-surface border border-border rounded-lg p-8 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
-        <h2 className="text-2xl font-bold text-text-primary mb-2 text-center">AI Opportunities</h2>
-        <p className="text-text-secondary text-center mb-8 max-w-md">Let AI identify your best campaign targets right now</p>
-        
-        {loadingOpportunities ? (
-          <div className="flex flex-col items-center w-full">
-            <button disabled className="bg-primary/50 text-white font-semibold py-3 px-6 rounded-full flex items-center transition-all cursor-not-allowed mb-8">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Thinking...
-            </button>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-              {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="animate-pulse bg-surface2 border border-border p-5 rounded-lg h-40"></div>
-              ))}
-            </div>
-            <p className="text-sm text-text-muted mt-6 text-center">AI is analyzing your shopper base... this may take up to 20 seconds</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center w-full">
-            <button 
-              onClick={handleFindOpportunities}
-              className="bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-6 rounded-full flex items-center transition-all mb-8 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              {aiOpportunities ? '🔄 Find New Opportunities' : '✨ Find Opportunities with AI'}
-            </button>
-            
-            {aiOpportunities && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                {aiOpportunities.map((opp, idx) => (
-                  <div key={idx} className="bg-surface border border-border p-5 rounded-lg flex flex-col hover:border-primary/50 transition-colors shadow-sm relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-sm ${opp.priority === 'high' ? 'bg-red-500/10 text-red-500' : opp.priority === 'medium' ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                        {opp.priority}
-                      </span>
-                      <span className="text-xs uppercase font-semibold text-text-muted bg-surface2 px-2 py-1 rounded-sm">
-                        {opp.suggested_channel}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-[15px] text-text-primary mb-1">{opp.title}</h3>
-                    <p className="text-xs text-text-muted mb-3 font-medium">{opp.segment_name}</p>
-                    <p className="text-[13px] text-text-secondary mb-4 flex-1 line-clamp-2">{opp.why_it_matters}</p>
-                    <div className="flex flex-col space-y-1 mb-5">
-                      <span className="text-sm text-text-primary font-medium">👥 {opp.estimated_reach.toLocaleString()} shoppers</span>
-                      <span className="text-sm text-text-primary font-medium">💰 Est. ₹{opp.estimated_revenue.toLocaleString()}</span>
-                    </div>
-                    <button 
-                      onClick={() => handleCreateCampaign(opp.suggested_goal)}
-                      className="w-full bg-surface2 hover:bg-primary hover:text-white text-primary text-sm font-semibold py-2 rounded transition-colors flex items-center justify-center group-hover:bg-primary group-hover:text-white"
-                    >
-                      Create Campaign <span className="ml-2">→</span>
-                    </button>
-                  </div>
-                ))}
+      <div>
+        <h2 className="text-xl font-bold text-text-primary mb-1">Segment Health</h2>
+        <p className="text-sm text-text-secondary mb-4">AI-identified opportunities in your shopper base</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {segmentHealth.map(seg => (
+            <div key={seg.id} className="bg-surface border border-border p-5 rounded-lg flex flex-col hover:border-primary/50 transition-colors shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-semibold text-text-primary">{seg.name}</h3>
+                <span className="text-2xl font-bold text-primary">{seg.count}</span>
               </div>
-            )}
-          </div>
-        )}
+              <p className="text-sm text-text-secondary mb-4 flex-1">{seg.desc}</p>
+              <button 
+                onClick={() => navigate('/campaign', { state: { presetGoal: `Target ${seg.name.toLowerCase()} segment` } })}
+                className="text-primary text-sm font-semibold hover:text-primary-hover self-start mt-auto flex items-center"
+              >
+                Create Campaign <span className="ml-1">→</span>
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>

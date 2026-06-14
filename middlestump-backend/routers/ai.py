@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from database import supabase
 from models import CampaignGoalRequest, CampaignConfirmRequest, SummaryRequest
 from services.context import get_business_context
-from services.gemini import process_campaign_goal, generate_campaign_summary, generate_opportunities
+from services.gemini import process_campaign_goal, generate_campaign_summary
 from services.channel import send_campaign_to_stub
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -13,16 +13,6 @@ logger = logging.getLogger(__name__)
 @router.get("/context")
 async def get_context():
     return await get_business_context()
-
-@router.get("/opportunities")
-async def get_opportunities():
-    try:
-        context = await get_business_context()
-        ops = await generate_opportunities(context)
-        return ops
-    except Exception as e:
-        logger.error(f"Error in /opportunities: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/analyze")
 async def analyze_goal(payload: CampaignGoalRequest):
