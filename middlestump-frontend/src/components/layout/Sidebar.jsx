@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw, TrendingUp, Sparkles } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
 export function Sidebar() {
@@ -8,7 +8,7 @@ export function Sidebar() {
 
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/campaign', icon: MessageSquare, label: 'AI Strategist' },
+    { to: '/campaign', icon: Sparkles, label: 'AI Strategist' },
     { to: '/campaigns', icon: List, label: 'Campaigns' },
     { to: '/shoppers', icon: Users, label: 'Shoppers' },
   ];
