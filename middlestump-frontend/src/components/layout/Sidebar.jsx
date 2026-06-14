@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, MessageSquare, List, Users, X, Target, BarChart, RefreshCw } from 'lucide-react';
 import logo from '../../assets/logo.png';
-import logo from '../../assets/logo.png';
 
 export function Sidebar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
