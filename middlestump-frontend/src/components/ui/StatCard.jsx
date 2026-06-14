@@ -20,9 +20,9 @@ export function StatCard({ title, value, subtitle, trend, color = 'green' }) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6 flex flex-col shadow-sm">
+    <div className="bg-surface border border-border/70 rounded-xl p-5 flex flex-col shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <div className="text-muted text-xs uppercase font-semibold mb-2">{title}</div>
-      <div className={cn("text-[28px] font-bold leading-none mb-2", colorClasses[color] || 'text-primary')}>
+      <div className={cn("font-serif text-[28px] font-bold leading-none mb-2", colorClasses[color] || 'text-primary')}>
         {value}
       </div>
       <div className="flex items-center text-sm text-text-secondary mt-auto">

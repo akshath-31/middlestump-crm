@@ -43,7 +43,7 @@ export function Overview() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary mb-1">Overview</h1>
+        <h1 className="font-serif text-3xl font-bold text-text-primary mb-1">Overview</h1>
         <p className="text-text-secondary">Welcome back. Here's what's happening today.</p>
       </div>
 
@@ -55,14 +55,14 @@ export function Overview() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-text-primary mb-1">Segment Health</h2>
+        <h2 className="font-serif text-2xl font-bold text-text-primary mb-1">Segment Health</h2>
         <p className="text-sm text-text-secondary mb-4">AI-identified opportunities in your shopper base</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {segmentHealth.map(seg => (
-            <div key={seg.id} className="bg-surface border border-border p-5 rounded-lg flex flex-col hover:border-primary/50 transition-colors shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-text-primary">{seg.name}</h3>
-                <span className="text-2xl font-bold text-primary">{seg.count}</span>
+            <div key={seg.id} className="bg-surface border border-border/70 p-5 rounded-xl flex flex-col hover:border-primary/50 transition-colors shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-serif font-bold text-xl text-text-primary">{seg.name}</h3>
+                <span className="font-serif text-3xl font-bold text-primary">{seg.count}</span>
               </div>
               <p className="text-sm text-text-secondary mb-4 flex-1">{seg.desc}</p>
               <button 
@@ -77,8 +77,8 @@ export function Overview() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-text-primary mb-4">Recent Campaigns</h2>
-        <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-sm">
+        <h2 className="font-serif text-2xl font-bold text-text-primary mb-4">Recent Campaigns</h2>
+        <div className="bg-surface border border-border/70 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm text-left">
             <thead className="bg-surface2 text-text-muted uppercase text-xs">
               <tr>
@@ -96,7 +96,7 @@ export function Overview() {
                 const clickRate = c.total_opened ? ((c.total_clicked / c.total_opened) * 100).toFixed(1) : "0.0";
                 return (
                   <tr key={c.id} onClick={() => navigate('/campaigns')} className="border-b border-border hover:bg-surface2 cursor-pointer transition-colors">
-                    <td className="px-6 py-4 font-medium text-text-primary">{c.name}</td>
+                    <td className="px-6 py-4 font-serif font-bold text-text-primary text-base">{c.name}</td>
                     <td className="px-6 py-4"><SegmentBadge segment={c.target_segment_name} /></td>
                     <td className="px-6 py-4 uppercase text-xs font-semibold">{c.channel}</td>
                     <td className="px-6 py-4 font-medium">{c.total_sent || c.sent_count || 0}</td>

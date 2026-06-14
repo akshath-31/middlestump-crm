@@ -50,6 +50,15 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-sidebar-active mt-auto">
+        <div className="bg-sidebar-active/50 rounded-xl p-4 mb-4 border border-sidebar-active">
+          <div className="flex items-center mb-1">
+            <span className="text-lg mr-2">✨</span>
+            <span className="text-white font-medium text-xs uppercase tracking-wide">AI Strategist</span>
+          </div>
+          <p className="text-[11px] text-text-muted leading-relaxed">
+            Your AI assistant is monitoring shopper segments for new revenue opportunities.
+          </p>
+        </div>
         <div className="flex items-center text-xs text-text-muted">
           <span className={`w-2 h-2 rounded-full mr-2 ${isApiLive ? 'bg-primary' : 'bg-danger'}`}></span>
           MiddleStump CRM

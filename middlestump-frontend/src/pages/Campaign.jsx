@@ -106,7 +106,7 @@ export function Campaign() {
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <div className="mb-4 shrink-0">
-        <h1 className="text-2xl font-bold text-text-primary">AI Campaign Builder</h1>
+        <h1 className="font-serif text-3xl font-bold text-text-primary mb-1">AI Campaign Builder</h1>
         <p className="text-sm text-text-secondary">Describe your goal. The AI handles the rest.</p>
       </div>
 
@@ -116,7 +116,7 @@ export function Campaign() {
             <div className="w-16 h-16 bg-primary-light rounded-full flex items-center justify-center mb-6">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
             </div>
-            <h2 className="text-xl font-bold text-text-primary mb-8">What's your marketing goal today?</h2>
+            <h2 className="font-serif text-2xl font-bold text-text-primary mb-8">What's your marketing goal today?</h2>
             <div className="flex flex-col space-y-3 w-full">
               {suggestions.map((s, i) => (
                 <button

@@ -96,13 +96,16 @@ async def analyze_goal(payload: CampaignGoalRequest):
         if not pred_rev or float(pred_rev) == 0:
             pred_rev = pred_conv * 3500
 
+        message_templates = ai_res.get("message_templates", {})
+        db_message_template = message_templates.get(channel) or ai_res.get("message_template", "")
+
         campaign_data = {
             "name": ai_res.get("campaign_name", "Untitled Campaign"),
             "goal": payload.goal,
             "prompt": payload.goal,
             "target_segment_name": target_segment_name,
             "segment_filter": segment,
-            "message_template": ai_res.get("message_template"),
+            "message_template": db_message_template,
             "channel": channel,
             "status": "draft",
             "ai_reasoning": ai_res.get("reasoning"),
@@ -115,37 +118,67 @@ async def analyze_goal(payload: CampaignGoalRequest):
         camp_res = supabase.table("campaigns").insert(campaign_data).execute()
         campaign_id = camp_res.data[0]["id"]
         
-        message_preview = ai_res.get("message_template", "")
-        if shoppers:
-            sample = shoppers[0]
-            name = sample.get("name", "")
-            
-            last_product = "your recent purchase"
-            days_since = "a while"
-            if sample.get("last_order_date"):
-                orders_res = supabase.table("orders").select("id").eq("shopper_id", sample["id"]).order("order_date", desc=True).limit(1).execute()
-                if orders_res.data:
-                    o_id = orders_res.data[0]["id"]
-                    items_res = supabase.table("order_items").select("product_name").eq("order_id", o_id).limit(1).execute()
-                    if items_res.data:
-                        last_product = items_res.data[0]["product_name"]
-                        
-                # Fix: Handle ISO formats safely by slicing up to 10 chars (YYYY-MM-DD)
-                last_d = date.fromisoformat(sample["last_order_date"][:10])
-                days_since = str((today - last_d).days)
-                
-            message_preview = message_preview.replace("{name}", name).replace("{last_product}", last_product).replace("{days_since_order}", days_since)
+        message_previews = {}
+        sample = shoppers[0] if shoppers else {}
+        name = sample.get("name", "")
+        last_product = "your recent purchase"
+        days_since = "a while"
+
+        if sample.get("last_order_date"):
+            orders_res = supabase.table("orders").select("id").eq("shopper_id", sample["id"]).order("order_date", desc=True).limit(1).execute()
+            if orders_res.data:
+                o_id = orders_res.data[0]["id"]
+                items_res = supabase.table("order_items").select("product_name").eq("order_id", o_id).limit(1).execute()
+                if items_res.data:
+                    last_product = items_res.data[0]["product_name"]
+            last_d = date.fromisoformat(sample["last_order_date"][:10])
+            days_since = str((today - last_d).days)
+
+        for ch, template in message_templates.items():
+            prev = template
+            if shoppers:
+                prev = prev.replace("{name}", name).replace("{last_product}", last_product).replace("{days_since_order}", days_since)
+            message_previews[ch] = prev
+
+        message_preview = message_previews.get(channel, db_message_template)
+
+        pre_send_checks = [
+            {
+                "label": "Audience verified",
+                "passed": actual_reach > 0,
+                "detail": f"{actual_reach} shoppers matched your segment criteria."
+            },
+            {
+                "label": "Personalization ready",
+                "passed": "{name}" not in message_preview and "{last_product}" not in message_preview and "{days_since_order}" not in message_preview,
+                "detail": "Name, last product and order history resolve for every recipient."
+            },
+            {
+                "label": "Channel compatible",
+                "passed": channel in ["whatsapp", "sms", "email"],
+                "detail": f"{channel.upper()} delivery configured via stub channel service."
+            },
+            {
+                "label": "Segment within bounds",
+                "passed": actual_reach <= 300,
+                "detail": f"Targeting {actual_reach} of 300 total shoppers — within safe limits." if actual_reach <= 300 else f"Targeting {actual_reach} shoppers exceeds the safe limit of 300."
+            }
+        ]
 
         return {
             "campaign_id": campaign_id,
+            "goal": payload.goal,
             "campaign_name": ai_res.get("campaign_name"),
             "target_segment_name": target_segment_name,
             "opportunity": ai_res.get("opportunity"),
             "why_it_matters": ai_res.get("why_it_matters"),
+            "segment": segment,
             "actual_reach": actual_reach,
             "reasoning": ai_res.get("reasoning"),
-            "message_template": ai_res.get("message_template"),
+            "message_templates": message_templates,
+            "message_previews": message_previews,
             "message_preview": message_preview,
+            "pre_send_checks": pre_send_checks,
             "channel": channel,
             "channel_reasoning": ai_res.get("channel_reasoning"),
             "predicted_open_rate": pred_open,

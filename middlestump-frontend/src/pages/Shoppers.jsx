@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useShoppers } from '../hooks/useShoppers';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
+import { MessageCircle } from 'lucide-react';
 
 export function Shoppers() {
   const [page, setPage] = useState(1);
@@ -21,8 +22,8 @@ export function Shoppers() {
     <div className="space-y-6 animate-in fade-in duration-500 flex flex-col h-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <h1 className="text-2xl font-bold text-text-primary">Shoppers</h1>
-          <span className="bg-surface2 text-text-secondary px-2.5 py-1 rounded-full text-xs font-semibold">
+          <h1 className="font-serif text-3xl font-bold text-text-primary">Shoppers</h1>
+          <span className="inline-flex items-center px-3 py-1 bg-surface2 text-text-secondary rounded-full border border-border text-xs font-medium">
             {data?.total_count || 0} total
           </span>
         </div>
@@ -67,15 +68,15 @@ export function Shoppers() {
             <tbody>
               {data?.data?.map(s => (
                 <tr key={s.id} className="border-b border-border hover:bg-surface2 cursor-pointer">
-                  <td className="px-6 py-4 font-medium text-text-primary whitespace-nowrap">{s.name}</td>
+                  <td className="px-6 py-4 font-serif font-bold text-base text-text-primary whitespace-nowrap">{s.name}</td>
                   <td className="px-6 py-4 text-text-secondary whitespace-nowrap">{s.city}</td>
-                  <td className="px-6 py-4"><span className="bg-surface2 px-2 py-1 rounded text-xs font-semibold uppercase">{s.shopper_type}</span></td>
+                  <td className="px-6 py-4"><span className="inline-flex items-center px-3 py-1 bg-surface2 text-text-secondary rounded-full border border-border text-xs font-medium uppercase">{s.shopper_type}</span></td>
                   <td className="px-6 py-4 text-right font-medium">{s.total_orders}</td>
                   <td className="px-6 py-4 text-right font-medium">₹{(s.total_spend || 0).toLocaleString('en-IN')}</td>
                   <td className={`px-6 py-4 whitespace-nowrap ${getLastOrderColor(s.last_order_date)}`}>
                     {s.last_order_date ? new Date(s.last_order_date).toLocaleDateString() : 'Never'}
                   </td>
-                  <td className="px-6 py-4 text-xs font-semibold text-text-secondary uppercase">{s.preferred_channel}</td>
+                  <td className="px-6 py-4"><span className="inline-flex items-center px-3 py-1 bg-surface2 text-text-secondary rounded-full border border-border text-xs font-medium uppercase"><MessageCircle className="w-3 h-3 mr-1" />{s.preferred_channel}</span></td>
                   <td className="px-6 py-4 flex flex-wrap gap-1">
                     {s.tags?.slice(0, 2).map(t => <SegmentBadge key={t} segment={t} />)}
                     {s.tags?.length > 2 && <span className="text-xs text-text-muted ml-1">+{s.tags.length - 2}</span>}

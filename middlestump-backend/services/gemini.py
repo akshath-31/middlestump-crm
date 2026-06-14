@@ -93,7 +93,11 @@ Respond with exactly this JSON structure:
         "max_days_since_order": null
     }},
     "reasoning": "string - 2-3 sentences justifying this segment choice using the context data",
-    "message_template": "string - use {{name}}, {{last_product}}, {{days_since_order}} as variables. Conversational, cricket-specific, max 160 chars for SMS compatibility",
+    "message_templates": {{
+        "whatsapp": "string - use {{name}}, {{last_product}}, {{days_since_order}} as variables. max 160 chars, casual tone with emoji",
+        "sms": "string - use {{name}}, {{last_product}}, {{days_since_order}} as variables. max 120 chars, no emoji, concise",
+        "email": "string - use {{name}}, {{last_product}}, {{days_since_order}} as variables. max 200 chars, slightly more formal"
+    }},
     "channel": "whatsapp or sms or email",
     "channel_reasoning": "string",
     "predicted_open_rate": float,

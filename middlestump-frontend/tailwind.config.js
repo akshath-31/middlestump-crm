@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Fraunces', 'serif'],
+      },
       colors: {
         background: '#F8FAFC',
         surface: '#FFFFFF',
