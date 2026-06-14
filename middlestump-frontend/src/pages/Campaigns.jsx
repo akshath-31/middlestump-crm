@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getCampaigns } from '../api/client';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
-import { DeliveryLog } from '../components/campaign/DeliveryLog';
+
 import { CampaignAudience } from '../components/campaign/CampaignAudience';
 import { CampaignAnalysis } from '../components/campaign/CampaignAnalysis';
 
@@ -71,16 +71,12 @@ export function Campaigns() {
           const openRate = delivered ? ((opened / delivered) * 100).toFixed(1) : '0.0';
           const clickRate = opened ? ((clicked / opened) * 100).toFixed(1) : '0.0';
           const convRate = clicked ? ((converted / clicked) * 100).toFixed(1) : '0.0';
-          const isLogExpanded = openPanels[c.id]?.log;
           const isAudienceExpanded = openPanels[c.id]?.audience;
           const isAnalysisExpanded = openPanels[c.id]?.analysis;
 
           return (
             <div key={c.id} className="bg-surface border border-border rounded-lg shadow-sm overflow-hidden transition-all">
-              <div 
-                className="p-5 flex flex-col lg:flex-row lg:items-center cursor-pointer hover:bg-surface2 transition-colors"
-                onClick={(e) => togglePanel(e, c.id, 'log')}
-              >
+              <div className="p-5 flex flex-col lg:flex-row lg:items-center">
                 <div className="flex-1 mb-4 lg:mb-0 pr-4">
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="font-bold text-lg text-text-primary">{c.name}</h3>
@@ -150,13 +146,6 @@ export function Campaigns() {
               {isAnalysisExpanded && (
                 <div className="border-t border-border bg-surface2">
                   <CampaignAnalysis campaign={c} />
-                </div>
-              )}
-
-              {isLogExpanded && (
-                <div className="p-5 border-t border-border bg-surface2">
-                  <h4 className="font-bold text-sm text-text-primary mb-2">Delivery Log</h4>
-                  <DeliveryLog campaignId={c.id} />
                 </div>
               )}
             </div>

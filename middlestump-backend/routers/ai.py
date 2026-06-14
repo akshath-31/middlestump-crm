@@ -347,7 +347,7 @@ async def analyze_campaign_results(campaign_id: str):
         pred_click = campaign.get("predicted_click_rate", 0)
         pred_conv = campaign.get("predicted_conversions", 0)
         
-        prompt = f"""You are a marketing analyst. Given this campaign's actual results vs predictions, write a 3-4 sentence analysis covering: how it performed vs predictions, one standout metric (positive or negative), and one specific actionable recommendation. Be direct and concise. No markdown, no headers.
+        prompt = f"""You are a marketing analyst. Given this campaign's actual results vs predictions, write approximately 50 words (no more than 60). Cover: how it performed vs predictions, one standout metric, and one specific actionable recommendation. Be direct and concise. No markdown, no headers, no quotes.
 
 Campaign goal: {goal}
 Channel: {channel}
@@ -355,9 +355,16 @@ Sent: {total_sent}, Delivered: {total_delivered}, Opened: {total_opened}, Clicke
 Predicted open rate: {pred_open}%, Predicted click rate: {pred_click}%, Predicted conversions: {pred_conv}"""
 
         from services.gemini import call_gemini_with_fallback
+        import google.generativeai as genai
         
         try:
-            res_text = await call_gemini_with_fallback(prompt, max_tokens=None, temperature=0.7)
+            generation_config = genai.types.GenerationConfig(temperature=0.7)
+            response = await call_gemini_with_fallback(prompt, generation_config=generation_config, request_options={"timeout": 30})
+            res_text = response.text.strip()
+            
+            logger.info(f"ANALYSIS RAW RESPONSE LENGTH: {len(res_text)}")
+            logger.info(f"ANALYSIS RAW RESPONSE (last 200 chars): {res_text[-200:]}")
+            
             if not res_text:
                 raise Exception("Empty response")
         except Exception as e:
