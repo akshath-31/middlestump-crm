@@ -66,6 +66,13 @@ async def get_campaign_audience(campaign_id: str):
             query = query.gte("last_order_date", min_date.isoformat())
             
         shoppers = query.execute().data
+        
+        # Attach communication status if available
+        comms_res = supabase.table("communications").select("shopper_id, status").eq("campaign_id", campaign_id).execute()
+        status_map = {c["shopper_id"]: c["status"] for c in comms_res.data}
+        for shopper in shoppers:
+            shopper["status"] = status_map.get(shopper["id"], "pending")
+            
         return shoppers
     except HTTPException:
         raise
