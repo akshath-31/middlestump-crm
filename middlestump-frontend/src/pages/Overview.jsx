@@ -7,6 +7,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SegmentBadge } from '../components/ui/SegmentBadge';
 import { Sparkles, MessageCircle, MessageSquare, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { humanizeSegmentTerms } from '../utils/formatters';
 
 export function Overview() {
   const navigate = useNavigate();
@@ -158,7 +159,7 @@ export function Overview() {
                 <p className="font-sans text-[11px] uppercase tracking-wide text-text-muted mb-3">{opp.segment_name}</p>
 
                 <p className="font-sans text-[13px] text-text-secondary line-clamp-2 mb-4 flex-1">
-                  {opp.why_it_matters}
+                  {humanizeSegmentTerms(opp.why_it_matters)}
                 </p>
 
                 <div className="flex items-center justify-between text-sm font-medium mb-4">

@@ -5,21 +5,30 @@ export function useCampaignStats(campaignId, enabled = false) {
   const query = useQuery({
     queryKey: ['campaignStats', campaignId],
     queryFn: () => getCampaignStats(campaignId),
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      const data = query?.state?.data;
       if (data && data.status === 'completed') {
         return false;
+      }
+      if (data && data.created_at) {
+        const pollingTimeout = data.total_sent > 50 ? 240000 : 120000;
+        const age = new Date() - new Date(data.created_at);
+        if (age > pollingTimeout) return false;
       }
       return 3000;
     },
     enabled: !!campaignId && enabled,
   });
 
-  // Calculate if polling time > 120s or status is completed
-  // We'll manage 120s timeout by checking the created_at vs now in the component or here.
-  // Actually, we can just rely on data.status === 'completed' as the primary stop condition,
-  // since the backend will mark it completed when it finishes processing the batch.
-
-  const isComplete = query.data?.status === 'completed';
+  const data = query.data;
+  let isComplete = data?.status === 'completed';
+  if (!isComplete && data?.created_at) {
+    const pollingTimeout = data.total_sent > 50 ? 240000 : 120000;
+    const age = new Date() - new Date(data.created_at);
+    if (age > pollingTimeout) {
+      isComplete = true; // treat as complete if we timed out
+    }
+  }
 
   return { ...query, isComplete };
 }

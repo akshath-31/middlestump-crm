@@ -22,6 +22,10 @@ export function LiveStatsPanel({ stats }) {
     ? ((total_converted / total_clicked) * 100).toFixed(1) 
     : '0.0';
 
+  const pollingTimeout = total_sent > 50 ? 240000 : 120000;
+  const isPollingStopped = stats.created_at && (new Date() - new Date(stats.created_at)) > pollingTimeout;
+  const showWarning = isPollingStopped && (total_delivered + total_failed < total_sent) && stats.status !== 'completed';
+
   return (
     <div className="bg-surface rounded-xl border border-border/70 shadow-sm w-full max-w-3xl mb-6 p-6">
       <h3 className="font-serif font-bold text-xl mb-1 flex items-center">
@@ -71,6 +75,12 @@ export function LiveStatsPanel({ stats }) {
       <div className="text-center text-sm text-text-secondary border-t border-border pt-4 mt-4">
         vs Predicted: Open {((stats.predicted_open_rate || 0) * 100).toFixed(1)}% | Click {((stats.predicted_click_rate || 0) * 100).toFixed(1)}% | Conv {stats.predicted_conversions ?? 0}
       </div>
+
+      {showWarning && (
+        <div className="mt-4 p-3 bg-amber/10 border border-amber/20 rounded-lg text-sm text-amber-700 text-center">
+          Some messages still processing — stats will continue updating in the Campaigns page.
+        </div>
+      )}
     </div>
   );
 }

@@ -157,6 +157,12 @@ export function Campaign() {
                     recommendation={m.data} 
                     onConfirm={handleConfirm} 
                     onEdit={handleEdit}
+                    onRefine={async (text) => {
+                      const refinedGoal = `${m.data.goal}. Refinement: ${text}`;
+                      setState('idle');
+                      setRecommendation(null);
+                      await handleAnalyze(refinedGoal);
+                    }}
                     isConfirming={state === 'confirming'}
                   />
                 )}

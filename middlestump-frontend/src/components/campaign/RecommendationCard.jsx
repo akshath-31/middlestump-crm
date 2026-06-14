@@ -11,6 +11,7 @@ import {
   ChevronDown, 
   Sparkles 
 } from 'lucide-react';
+import { humanizeSegmentTerms } from '../../utils/formatters';
 
 const CircularBadge = ({ number }) => (
   <div className="w-6 h-6 rounded-full bg-primary-light text-primary font-semibold text-xs flex items-center justify-center shrink-0">
@@ -18,9 +19,11 @@ const CircularBadge = ({ number }) => (
   </div>
 );
 
-export function RecommendationCard({ recommendation, onConfirm, onEdit, isConfirming }) {
+export function RecommendationCard({ recommendation, onConfirm, onEdit, onRefine, isConfirming }) {
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState(recommendation?.channel || 'whatsapp');
+  const [isRefining, setIsRefining] = useState(false);
+  const [refineText, setRefineText] = useState('');
 
   if (!recommendation) return null;
 
@@ -74,7 +77,7 @@ export function RecommendationCard({ recommendation, onConfirm, onEdit, isConfir
           <div className="flex justify-between items-start gap-6 mb-4">
             <div className="w-[60%]">
               <p className="text-text-primary font-medium text-lg leading-snug mb-4">
-                {recommendation.reasoning || 'Targeted segment of shoppers.'}
+                {humanizeSegmentTerms(recommendation.reasoning || 'Targeted segment of shoppers.')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {segment.filter_tags?.map(tag => (
@@ -178,7 +181,7 @@ export function RecommendationCard({ recommendation, onConfirm, onEdit, isConfir
               </div>
             </div>
             <p className="text-text-secondary text-sm">
-              {recommendation.channel_reasoning || 'Best channel for this audience based on historical interaction data.'}
+              {humanizeSegmentTerms(recommendation.channel_reasoning || 'Best channel for this audience based on historical interaction data.')}
             </p>
           </div>
         </div>
@@ -223,13 +226,13 @@ export function RecommendationCard({ recommendation, onConfirm, onEdit, isConfir
       </div>
 
       {/* Footer */}
-      <div className="p-5 bg-surface2 border-t border-border/70 rounded-b-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className={`p-5 bg-surface2 border-t border-border/70 flex flex-col md:flex-row items-center justify-between gap-4 ${isRefining ? '' : 'rounded-b-xl'}`}>
         <div className="text-xs text-text-muted">
           Human-in-the-loop. Nothing sends without your approval.
         </div>
         <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
           <button 
-            onClick={onEdit}
+            onClick={() => setIsRefining(!isRefining)}
             disabled={isConfirming}
             className="px-6 bg-surface hover:bg-surface2 border border-border text-text-primary font-semibold py-2.5 rounded-full transition-colors disabled:opacity-50 text-sm"
           >
@@ -245,6 +248,30 @@ export function RecommendationCard({ recommendation, onConfirm, onEdit, isConfir
           </button>
         </div>
       </div>
+      
+      {isRefining && (
+        <div className="p-5 bg-surface2 border-t border-border/70 rounded-b-xl flex flex-col sm:flex-row items-center gap-3">
+          <input 
+            type="text"
+            value={refineText}
+            onChange={(e) => setRefineText(e.target.value)}
+            placeholder="e.g., Make it shorter, use SMS instead..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && refineText.trim() && onRefine) {
+                onRefine(refineText);
+              }
+            }}
+            className="flex-1 w-full bg-surface border border-border rounded-full py-2.5 px-5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all"
+          />
+          <button 
+            onClick={() => onRefine && onRefine(refineText)}
+            disabled={!refineText.trim()}
+            className="bg-[#16A34A] hover:bg-[#15803d] text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-colors disabled:opacity-50 w-full sm:w-auto"
+          >
+            Generate
+          </button>
+        </div>
+      )}
     </div>
   );
 }
