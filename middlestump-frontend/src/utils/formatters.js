@@ -3,6 +3,7 @@ export const humanizeSegmentTerms = (text) => {
   const replacements = {
     'churn_risk': 'Churn Risk',
     'lapsed_6m': 'Lapsed (6m+)',
+    'lapsed': 'Lapsed',
     'high_value': 'High Value',
     'ipl_buyer': 'IPL Buyer',
     'first_timer': 'First Timer',
@@ -15,7 +16,8 @@ export const humanizeSegmentTerms = (text) => {
   }
   let result = text
   for (const [key, value] of Object.entries(replacements)) {
-    result = result.replace(new RegExp(`'${key}'|"${key}"|\\b${key}\\b`, 'g'), value)
+    // Replace the quoted term or the raw boundary term with the unquoted value
+    result = result.replace(new RegExp(`'${key}'|"${key}"|\\b${key}\\b`, 'gi'), value)
   }
   return result
 }

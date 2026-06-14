@@ -21,6 +21,7 @@ async def send_single_communication(client: httpx.AsyncClient, semaphore: asynci
         }
         try:
             response = await client.post(f"{STUB_SERVICE_URL}/send", json=payload)
+            logger.info(f"Sent message {comm['id']} to stub, response: {response.status_code}")
             response.raise_for_status()
         except Exception as e:
             logger.error(f"Failed to send communication {comm['id']}: {e}")
@@ -30,6 +31,8 @@ async def send_single_communication(client: httpx.AsyncClient, semaphore: asynci
                 logger.error(f"Failed to update communication status to failed: {db_e}")
 
 async def send_campaign_to_stub(campaign_id: str, communications: list):
+    logger.info(f"STUB_SERVICE_URL environment variable is: {STUB_SERVICE_URL}")
+    logger.info(f"Sending {len(communications)} messages to stub at {STUB_SERVICE_URL}")
     semaphore = asyncio.Semaphore(50)
     
     async with httpx.AsyncClient(timeout=10.0) as client:
