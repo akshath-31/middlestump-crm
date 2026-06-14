@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function LiveStatsPanel({ stats }) {
+export function LiveStatsPanel({ stats, isPollingStopped = false }) {
   if (!stats) return null;
 
   const total_sent = stats.total_sent ?? 0;
@@ -22,8 +22,6 @@ export function LiveStatsPanel({ stats }) {
     ? ((total_converted / total_clicked) * 100).toFixed(1) 
     : '0.0';
 
-  const pollingTimeout = total_sent > 50 ? 240000 : 120000;
-  const isPollingStopped = stats.created_at && (new Date() - new Date(stats.created_at)) > pollingTimeout;
   const showWarning = isPollingStopped && (total_delivered + total_failed < total_sent) && stats.status !== 'completed';
 
   return (
