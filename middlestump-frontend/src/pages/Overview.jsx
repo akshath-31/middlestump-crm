@@ -11,8 +11,11 @@ import { humanizeSegmentTerms } from '../utils/formatters';
 
 export function Overview() {
   const navigate = useNavigate();
-  const { data: context, isLoading: isContextLoading } = useBusinessContext();
-  const { data: campaigns, isLoading: isCampaignsLoading } = useQuery({
+  const [aiOpportunities, setAiOpportunities] = useState(null);
+  const [loadingOpportunities, setLoadingOpportunities] = useState(false);
+
+  const { data: context, isLoading: isContextLoading, isError: isContextError } = useBusinessContext();
+  const { data: campaigns, isLoading: isCampaignsLoading, isError: isCampaignsError } = useQuery({
     queryKey: ['campaigns'],
     queryFn: getCampaigns,
   });
@@ -21,19 +24,21 @@ export function Overview() {
     return <div className="flex items-center justify-center h-full text-text-muted">Loading dashboard...</div>;
   }
 
-  const recentCampaigns = campaigns?.slice(0, 3) || [];
+  if (isContextError || isCampaignsError) {
+    return <div className="flex items-center justify-center h-full text-red-500 font-medium">Failed to load dashboard data. Please try again or refresh the page.</div>;
+  }
+
+  const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
+  const recentCampaigns = safeCampaigns.slice(0, 3);
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentConversions = campaigns?.filter(c => new Date(c.created_at) >= thirtyDaysAgo)
-    .reduce((sum, c) => sum + (c.total_converted || 0), 0) || 0;
+  const recentConversions = safeCampaigns.filter(c => new Date(c.created_at) >= thirtyDaysAgo)
+    .reduce((sum, c) => sum + (c.total_converted || 0), 0);
 
-  const totalConvertedAll = campaigns?.reduce((sum, c) => sum + (c.total_converted || 0), 0) || 0;
-  const totalSentAll = campaigns?.reduce((sum, c) => sum + (c.total_sent || 0), 0) || 0;
+  const totalConvertedAll = safeCampaigns.reduce((sum, c) => sum + (c.total_converted || 0), 0);
+  const totalSentAll = safeCampaigns.reduce((sum, c) => sum + (c.total_sent || 0), 0);
   const overallConversionRate = totalSentAll > 0 ? ((totalConvertedAll / totalSentAll) * 100).toFixed(1) : "0.0";
-  
-  const [aiOpportunities, setAiOpportunities] = useState(null);
-  const [loadingOpportunities, setLoadingOpportunities] = useState(false);
 
   const handleFindOpportunities = async () => {
     setLoadingOpportunities(true);
@@ -62,7 +67,7 @@ export function Overview() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Shoppers" value={context?.total_shoppers?.toLocaleString() || '0'} color="green" />
-        <StatCard title="Total Campaigns" value={campaigns?.length?.toLocaleString() || '0'} color="blue" />
+        <StatCard title="Total Campaigns" value={safeCampaigns.length.toLocaleString()} color="blue" />
         <StatCard title="Conversions Last 30 Days" value={recentConversions.toLocaleString()} color="green" />
         <StatCard title="Overall Conversion Rate" value={`${overallConversionRate}%`} color="green" />
       </div>
