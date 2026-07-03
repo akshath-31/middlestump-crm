@@ -4,16 +4,6 @@
 
 ---
 
-## Live Demo
-
-| Service                | URL                                 |
-| ---------------------- | ----------------------------------- |
-| Frontend               | https://middlestump-crm.vercel.app/ |
-| Backend API            | https://middlestump-backend.onrender.com |
-| Stub Messaging Service | https://middlestump-stub.onrender.com |
-
----
-
 ## AI-Native Approach
 
 MiddleStump is not a traditional CRM, nor is it a conversational chatbot. It is built from the ground up as an AI-native campaign orchestration engine. 
@@ -68,7 +58,7 @@ The marketer remains the **supervisor**, approving strategies and budgets, while
 | **Backend** | FastAPI (Python), httpx |
 | **Database** | Supabase PostgreSQL |
 | **AI Layer** | Google Gemini 2.5 Flash |
-| **Infrastructure** | Vercel (Frontend), Render (Backend, Stub Service) |
+| **Infrastructure** | Designed for Vercel (Frontend), Render (Backend, Stub Service) |
 
 ---
 
