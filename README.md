@@ -4,6 +4,10 @@
 
 ---
 
+> **Note:** This project was previously hosted live (Vercel + Render) for demo and testing purposes as part of the internship engagement. Hosting has since been taken down as it's no longer required, but the full deployment setup is documented below under Local Setup.
+
+---
+
 ## AI-Native Approach
 
 MiddleStump is not a traditional CRM, nor is it a conversational chatbot. It is built from the ground up as an AI-native campaign orchestration engine. 
